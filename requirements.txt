@@ -1,0 +1,11 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+_libgcc_mutex=0.1=conda_forge
+_openmp_mutex=4.5=2_gnu
+opencv=4.10.0=py310h0a8ef67_0
+numpy=1.26.4=py310h5f9d8c6_0
+numpy-base=1.26.4=py310hb5e798b_0
+mysql=5.7.24=h721c034_2
+mysql-connector-c=6.1.11=h659d440_1008
+mysqlclient=2.0.3=py310h295c915_1
