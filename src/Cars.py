@@ -5,7 +5,10 @@ class Cars(object):
     def __init__(self, dims) -> None:
         self.cars = []
         self.dims = dims
-        self.locations = np.zeros(dims)
+        self.locations = np.zeros(dims)-1
+
+    def __iter__(self):
+        return self.cars.__iter__()
 
     def moveCar(self, index, new_location):
         pass
@@ -13,6 +16,9 @@ class Cars(object):
     def append(self, car: Car):
         self.cars.append(car)
         self.locations[car.location] = len(self.cars)
+
+    def removeByPlate(self, plate:str):
+        pass
 
     def getPlate(self, index: int) -> str:
         return self.cars[index].plate
@@ -25,4 +31,7 @@ class Cars(object):
 
     def __setitem__(self, index: int, value: Car):
         pass
+
+    def __bool__(self) -> bool:
+        return len(self.cars)>0
 
