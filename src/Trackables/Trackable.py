@@ -1,4 +1,4 @@
-from Signal import Signal
+from src.Signal import Signal
 
 class Trackable(object):
     def __init__(self, location, box) -> None:

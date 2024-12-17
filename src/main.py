@@ -8,11 +8,11 @@ from DataBaseController import DataBaseController
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read(Path(__file__).parent.parent /'config.ini')
-    db = MySQLdb.connect(host=config["mysql"]["HOST"], 
-                     user=config["mysql"]["USER"],      
-                     passwd=config["mysql"]["PASSWORD"], 
-                     db=config["mysql"]["DATABASE"])      
+    config.read(Path(__file__).parent.parent / 'config.ini')
+    db = MySQLdb.connect(host=config["mysql"]["HOST"],
+                         user=config["mysql"]["USER"],
+                         passwd=config["mysql"]["PASSWORD"],
+                         db=config["mysql"]["DATABASE"])
 
     cam = None
     dbController = DataBaseController(db)
