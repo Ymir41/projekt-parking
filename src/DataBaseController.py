@@ -11,21 +11,21 @@ class DataBaseController(object):
         connection (MySQLdb.connections.Connection): The database connection object.
     """
 
-    def __init__(self, connection) -> None:
-        """
-        Initializes the DataBaseController with a database connection.
+    def __init__(self, params) -> None:
+        self.params = params
+        self.connection = None
 
-        Args:
-            connection (MySQLdb.connections.Connection): The database connection object.
-        """
-        self.connection = connection
+    @staticmethod
+    def connect(func):
+        def wrapper(self, *args, **kwargs):
+            db = MySQLdb.connect(self.params)
+            self.connection = db
+            func(self, *args, **kwargs)
+            self.connection = None
+            db.close()
+        return wrapper
 
-    def __del__(self):
-        """
-        Closes the database connection when the object is deleted.
-        """
-        self.connection.close()
-
+    @connect
     def isCarAllowed(self, plate_number: str) -> int:
         """
         Checks if a car with the given plate number is allowed to enter.
@@ -45,6 +45,7 @@ class DataBaseController(object):
 
         return result[0]
 
+    @connect
     def addCarEntry(self, car_plate_id: int) -> bool:
         """
         Adds an entry record for a car.
@@ -65,6 +66,7 @@ class DataBaseController(object):
         self.connection.commit()
         return True
 
+    @connect
     def addCarExit(self, car_plate_id: int) -> bool:
         """
         Adds an exit record for a car.
@@ -85,6 +87,7 @@ class DataBaseController(object):
         self.connection.commit()
         return True
 
+    @connect
     def carTookSpot(self, car_plate_id: int, spot: int) -> bool:
         """
         Records that a car took a parking spot.
@@ -102,6 +105,7 @@ class DataBaseController(object):
         self.connection.commit()
         return True
 
+    @connect
     def carFreedSpot(self, spot: int) -> bool:
         """
         Records that a car freed a parking spot.
@@ -117,3 +121,4 @@ class DataBaseController(object):
 
         self.connection.commit()
         return True
+
