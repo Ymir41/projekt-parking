@@ -8,25 +8,56 @@ class DataBaseController(object):
     A controller class to manage database operations related to car parking.
 
     Attributes:
+        params (dict) parameters of connection
         connection (MySQLdb.connections.Connection): The database connection object.
     """
 
     def __init__(self, params) -> None:
         self.params = params
         self.connection = None
+        self.cursor = None
 
     @staticmethod
     def connect(func):
         def wrapper(self, *args, **kwargs):
-            db = MySQLdb.connect(self.params)
-            self.connection = db
-            func(self, *args, **kwargs)
-            self.connection = None
-            db.close()
+            to_close = False
+            if self.connection == None:
+                to_close = True
+                db = MySQLdb.connect(**self.params)
+                self.connection = db
+                self.cursor = db.cursor()
+
+            res = func(self, *args, **kwargs)
+
+            if to_close:
+                self.cursor.close()
+                self.cursor = None
+                self.connection = None
+                db.close()
+            return res
         return wrapper
 
     @connect
-    def isCarAllowed(self, plate_number: str) -> int:
+    def getIDFromPlateNumber(self, plate_number: str):
+        """
+        Returns car_plate_id of given plate_number, if plate_number not existant, then 0.
+
+        Args:
+            plate_number (str): The plate number of the car.
+
+        Returns:
+            int: car_plate_id, of that car if not in database, then None
+        """
+        self.cursor.execute("SELECT car_plate_id FROM car_plates WHERE plate_number = %s", (plate_number,))
+        car_plate_id = self.cursor.fetchone()
+        if car_plate_id is None:
+            return None
+        return car_plate_id[0]
+        return 
+
+
+    @connect
+    def isCarAllowed(self, plate_number: str) -> bool:
         """
         Checks if a car with the given plate number is allowed to enter.
 
@@ -34,19 +65,19 @@ class DataBaseController(object):
             plate_number (str): The plate number of the car.
 
         Returns:
-            int: The car plate ID if the car is allowed, 0 otherwise.
+            bool: True if the car is allowed, False otherwise
         """
-        cursor = self.connection.cursor()
-        cursor.execute("SELECT car_plate_id FROM car_plates WHERE plate_number = %s", (plate_number,))
-        result = cursor.fetchone()
+        self.cursor.execute("SELECT car_plate_id FROM car_plates WHERE plate_number = %s", (plate_number,))
+        result = self.cursor.fetchone()
+
 
         if result is None:
-            return 0
+            return False
 
-        return result[0]
+        return True
 
     @connect
-    def addCarEntry(self, car_plate_id: int) -> bool:
+    def addCarEntry(self, plate_number: str) -> bool:
         """
         Adds an entry record for a car.
 
@@ -56,8 +87,13 @@ class DataBaseController(object):
         Returns:
             bool: True if the entry was added successfully, False otherwise.
         """
-        cursor = self.connection.cursor()
-        result = cursor.execute("INSERT INTO car_movements (car_plate_id, entry_time) VALUES (%s,%s)",
+        car_plate_id = self.getIDFromPlateNumber(plate_number)
+        if car_plate_id is None:
+            result = self.cursor.execute("INSERT INTO car_movements_not_allowed (plate_number, entry_time) VALUES (%s,%s)",
+                                (plate_number, datetime.datetime.now()))
+
+        else:
+            result = self.cursor.execute("INSERT INTO car_movements (car_plate_id, entry_time) VALUES (%s,%s)",
                                 (car_plate_id, datetime.datetime.now()))
 
         if result == 0:
@@ -67,18 +103,23 @@ class DataBaseController(object):
         return True
 
     @connect
-    def addCarExit(self, car_plate_id: int) -> bool:
+    def addCarExit(self, plate_number:str) -> bool:
         """
         Adds an exit record for a car.
 
         Args:
-            car_plate_id (int): The ID of the car plate.
+            plate_number (str): The plate number of the car plate.
 
         Returns:
             bool: True if the exit was added successfully, False otherwise.
         """
-        cursor = self.connection.cursor()
-        result = cursor.execute("UPDATE car_movements SET exit_time = %s WHERE car_plate_id = %s AND exit_time IS NULL",
+        car_plate_id = self.getIDFromPlateNumber(plate_number)
+        if car_plate_id is None:
+            result = self.cursor.execute("UPDATE car_movements_not_allowed SET exit_time = %s WHERE plate_number = %s AND exit_time is NULL",
+                                 (datetime.datetime.now(), plate_number))
+
+        else:
+            result = self.cursor.execute("UPDATE car_movements SET exit_time = %s WHERE car_plate_id = %s AND exit_time IS NULL",
                                 (datetime.datetime.now(), car_plate_id))
 
         if result == 0:
@@ -88,7 +129,7 @@ class DataBaseController(object):
         return True
 
     @connect
-    def carTookSpot(self, car_plate_id: int, spot: int) -> bool:
+    def carTookSpot(self, plate_number:str, spot: int) -> bool:
         """
         Records that a car took a parking spot.
 
@@ -96,8 +137,8 @@ class DataBaseController(object):
             car_plate_id (int): The ID of the car plate.
             spot (int): The parking spot number.
         """
-        cursor = self.connection.cursor()
-        res = cursor.execute("UPDATE parking_spaces SET car_plate_id = %s, is_free = 0 WHERE parking_space_id = %s",
+        car_plate_id = self.getIDFromPlateNumber(plate_number)
+        res = self.cursor.execute("UPDATE parking_spaces SET car_plate_id = %s, is_free = 0 WHERE parking_space_id = %s",
                              (car_plate_id, spot))
         if res == 0:
             return False
@@ -113,8 +154,7 @@ class DataBaseController(object):
         Args:
             spot (int): The parking spot number.
         """
-        cursor = self.connection.cursor()
-        res = cursor.execute("UPDATE parking_spaces SET car_plate_id = NULL, is_free = 1 WHERE parking_space_id = %s",
+        res = self.cursor.execute("UPDATE parking_spaces SET car_plate_id = NULL, is_free = 1 WHERE parking_space_id = %s",
                              (spot,))
         if res == 0:
             return False
