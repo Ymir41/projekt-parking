@@ -4,16 +4,21 @@ import skimage.filters as filters
 
 import src.DataBaseController as DataBaseController
 import src.Readers.LicensePlateReader as PlateReader
+from src.Signal import Signal
 
 
 class EntryTracker:
-    def __init__(self, db: DataBaseController):
+    def __init__(self, isCarAllowed, carAllowedToEnter: Signal, readyToCloseEntryGate: Signal):
         """
         Initializes the EntryTracker.
         Args:
-            db: The database controller.
+            isCarAllowed - function that returns True if car is allowed to enter and False otherwise
+            carAllowedToEnter - Signal that will be emmited when car that may enter is detected
+            readyToCloseEntryGate - Signal that tells that the gate can be closed
         """
-        self.db = db
+        self.isCarAllowed = isCarAllowed
+        self.carAllowedToEnter = carAllowedToEnter
+        self.readyToCloseEntryGate = readyToCloseEntryGate
         self.gateOpened = False
         self.car_position_box = None
         self.car_positions = []
@@ -28,7 +33,7 @@ class EntryTracker:
         Returns: True if the car is verified, False otherwise.
 
         """
-        LicensePlateReader = PlateReader.LicensePlateReader(self.db)
+        LicensePlateReader = PlateReader.LicensePlateReader(self.isCarAllowed)
         car_plate_id, plate_number = LicensePlateReader.read_plate(image)
         if car_plate_id != 0 and plate_number != 0:
             self.car_plate_id = car_plate_id
@@ -174,11 +179,8 @@ class EntryTracker:
         Returns: None
 
         """
-        if self.db.addCarEntry(car_plate_id):
-            self.gateOpened = True
-            print("Gate opened.")
-        else:
-            print("Failed to open gate.")
+        self.carAllowedToEnter.emit()
+        self.gateOpened = True
 
     def closeGate(self):
         """
@@ -186,5 +188,6 @@ class EntryTracker:
 
         Returns: None
         """
+        self.readyToCloseEntryGate.emit()
         self.gateOpened = False
         print("Gate closed.")
