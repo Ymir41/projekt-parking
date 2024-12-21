@@ -6,37 +6,36 @@ from src.DataBaseController import DataBaseController
 
 
 class LicensePlateReader:
-    def __init__(self, db: DataBaseController):
+    def __init__(self, isCarAllowed):
         self.reader = easyocr.Reader(lang_list=['en'])
-        self.db = db
+        self.isCarAllowed = isCarAllowed
 
-    def plate_read_check(self, uint8_cropped_image: np.ndarray):
+    def plate_read_check(self, uint8_cropped_image: np.ndarray) -> tuple:
         """
         Reads the plate number and checks if the car is allowed to enter.
         Args:
             uint8_cropped_image: The cropped image of the license plate.
 
-        Returns: The car plate ID, the plate number and the result of the OCR if the car is allowed to enter, 0, 0, [] otherwise.
+        Returns: The plate number, the result of the OCR and True if the car is allowed to enter,  plate_number, res, False otherwise If could not read then 0, [], False.
         """
         res = self.reader.readtext(uint8_cropped_image, paragraph=True,
                                    allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
         if len(res) == 0:
-            return 0, 0, res
+            return 0, res, False
 
         plate_number = res[0][1]
         plate_number = str(plate_number).replace(" ", "")
         plate_number = plate_number.upper()
 
         if plate_number == "":
-            return 0, 0, res
+            return 0, res, False
 
-        car_plate_id = self.db.isCarAllowed(plate_number)
-        if car_plate_id != 0:
+        if self.isCarAllowed(plate_number):
             print("Car with plate number", plate_number, "is allowed to enter.")
-            return car_plate_id, plate_number, res
+            return plate_number, res, True
 
         print("Car with plate number", plate_number, "is not allowed to enter. Deep inspection in progress.")
-        return 0, 0, res
+        return plate_number, res, False
 
     def read_plate(self, image: np.ndarray):
         """
@@ -44,19 +43,19 @@ class LicensePlateReader:
         Args:
             image: The image to process.
 
-        Returns: The car plate ID and the plate number if the car is allowed to enter, None otherwise.
+        Returns: The car plate number if the car is allowed to enter, None otherwise.
         """
         if image is None:
             raise FileNotFoundError("Image not found.")
 
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        car_plate_id, plate_number, res = self.plate_read_check(image_gray)
-        if plate_number != 0:
-            return car_plate_id, plate_number
+        plate_number, res, is_allowed = self.plate_read_check(image_gray)
+        if plate_number != 0 and is_allowed:
+            return plate_number
 
         if len(res) == 0:
-            return 0, 0
+            return None
 
         (tl, tr, br, bl) = res[0][0]
         tl = (int(tl[0]), int(tl[1]))
@@ -71,36 +70,40 @@ class LicensePlateReader:
         threshed_cropped = np.invert(threshed_cropped)
 
         uint8_cropped_image = np.uint8(threshed_cropped * 255)
-        car_plate_id, plate_number, res = self.plate_read_check(uint8_cropped_image)
-        if plate_number != 0:
-            return car_plate_id, plate_number
+        plate_number, res, is_allowed = self.plate_read_check(uint8_cropped_image)
+        if plate_number != 0 and is_allowed:
+            return plate_number
 
         triangle_thresh = filters.threshold_otsu(cropped_image)
         threshed_cropped = cropped_image > triangle_thresh
 
         uint8_cropped_image = np.uint8(threshed_cropped * 255)
-        car_plate_id, plate_number, res = self.plate_read_check(uint8_cropped_image)
-        if plate_number != 0:
-            return car_plate_id, plate_number
+        plate_number, res, is_allowed = self.plate_read_check(uint8_cropped_image)
+        if plate_number != 0 and is_allowed:
+            return plate_number
 
         cropped_binary_dilation = morphology.binary_dilation(threshed_cropped, morphology.disk(1))
 
         cropped_binary_dilation = np.uint8(cropped_binary_dilation * 255)
-        car_plate_id, plate_number, res = self.plate_read_check(cropped_binary_dilation)
-        if plate_number != 0:
-            return car_plate_id, plate_number
+        plate_number, res, is_allowed = self.plate_read_check(cropped_binary_dilation)
+        if plate_number != 0 and is_allowed:
+            return plate_number
 
         li_tresh = filters.threshold_li(cropped_image)
         cropped_image_threshed = cropped_image > li_tresh
 
         uint8_cropped_image = np.uint8(cropped_image_threshed * 255)
-        car_plate_id, plate_number, res = self.plate_read_check(uint8_cropped_image)
-        if plate_number != 0:
-            return car_plate_id, plate_number
+        plate_number, res = self.plate_read_check(uint8_cropped_image)
+        if plate_number != 0 and is_allowed:
+            return plate_number
 
         cropped_image = np.uint8(cropped_image * 255)
-        car_plate_id, plate_number, res = self.plate_read_check(cropped_image)
-        if plate_number != 0:
-            return car_plate_id, plate_number
+        plate_number, res = self.plate_read_check(cropped_image)
+        if plate_number != 0 and is_allowed:
+            return plate_number
 
-        return 0, 0
+        if plate_number:
+            return plate_number
+
+        return None
+
