@@ -52,6 +52,14 @@ class TestDataBaseController(unittest.TestCase):
         cursor.close()
         connection.close()
 
+    def test_getIDFromPlateNumber(self):
+        for car_plate_id, plate_number in self.cars.items():
+            result = self.db_controller.getIDFromPlateNumber(plate_number)
+            self.assertEqual(result, car_plate_id, f"Failed to get ID for plate number {plate_number}. Should be: {car_plate_id}, is: {result}")
+        result = self.db_controller.getIDFromPlateNumber("NOTEXIST")
+        self.assertIsNone(result, f"getIDFromPlateNumber for nonexistent plate, should retrun None, retrurned: {result}")
+
+
     def test_is_car_allowed(self):
         for plate_number in self.cars.values():
             result = self.db_controller.isCarAllowed(plate_number)
@@ -60,7 +68,7 @@ class TestDataBaseController(unittest.TestCase):
         result = self.db_controller.isCarAllowed("NONEXIST")
         self.assertEqual(result, False, "Expected car with plate 'NONEXIST' to not be allowed.")
 
-    def test_add_car_entry_allowed(self):
+    def test_add_car_entry(self):
         for car_plate_id, plate_number in self.cars.items():
             result = self.db_controller.addCarEntry(plate_number)
             self.assertTrue(result, f"Failed to add entry for car with ID {car_plate_id} and plate number {plate_number}")
@@ -74,21 +82,6 @@ class TestDataBaseController(unittest.TestCase):
 
         cursor.close()
         connection.close()
-
-    def test_add_car_entry_not_allowed(self):
-        plate_number = "NOTEXIST"
-        result = self.db_controller.addCarEntry(plate_number)
-        self.assertTrue(result, f"Failed to add entry for car with plate number {plate_number}")
-
-        connection = MySQLdb.connect(**self.db_controller.params)
-        cursor = connection.cursor()
-
-        cursor.execute("SELECT * FROM car_movements_not_allowed WHERE plate_number = %s", (plate_number,))
-        self.assertEqual(cursor.rowcount, 1, f"Expected 1 entry for car with plate_number {plate_number}, found {cursor.rowcount}.")
-
-        cursor.close()
-        connection.close()
-
 
     def test_add_car_exit(self):
         for car_plate_id, plate_number in self.cars.items():
@@ -106,20 +99,6 @@ class TestDataBaseController(unittest.TestCase):
         cursor.close()
         connection.close()
 
-    def test_add_car_exit_not_allowed(self):
-        plate_number = "NOTEXIST"
-        self.db_controller.addCarEntry(plate_number)
-        result = self.db_controller.addCarExit(plate_number)
-        self.assertTrue(result, f"Failed to add exit for car with plate number {plate_number}.")
-
-        connection = MySQLdb.connect(**self.db_controller.params)
-        cursor = connection.cursor()
-        cursor.execute("SELECT exit_time FROM car_movements_not_allowed WHERE plate_number = %s", (plate_number,))
-        exit_time = cursor.fetchone()[0]
-        self.assertIsNotNone(exit_time, f"Exit time for car with ID {plate_number} was not recorded.")
-
-        cursor.close()
-        connection.close()
 
     def test_car_took_spot(self):
         for car_plate_id, plate_number in self.cars.items():
@@ -136,22 +115,6 @@ class TestDataBaseController(unittest.TestCase):
             spot_data = cursor.fetchone()
             self.assertEqual(spot_data[0], car_plate_id, f"Expected car with ID {car_plate_id} to be in spot {spot}, found {spot_data[0]}.")
             self.assertEqual(spot_data[1], 0, f"Expected spot {spot} to be marked as not free, found free status {spot_data[1]}.")
-
-        cursor.close()
-        connection.close()
-
-    def test_car_took_spot_not_allowed(self):
-        plate_number = "NOTEXIST"
-        spot = 1
-        result = self.db_controller.carTookSpot(plate_number, spot)
-        self.assertTrue(result, f"Failed to record car with plate number {plate_number} taking spot {spot}.")
-
-        connection = MySQLdb.connect(**self.db_controller.params)
-        cursor = connection.cursor()
-        cursor.execute("SELECT car_plate_id, is_free FROM parking_spaces WHERE parking_space_id = %s", (spot,))
-        spot_data = cursor.fetchone()
-        self.assertEqual(spot_data[0], None, f"Expected car with ID NULL (plate not allowed) to be in spot {spot}, found {spot_data[0]}.")
-        self.assertEqual(spot_data[1], 0, f"Expected spot {spot} to be marked as not free, found free status {spot_data[1]}.")
 
         cursor.close()
         connection.close()

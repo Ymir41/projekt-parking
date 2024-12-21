@@ -88,12 +88,7 @@ class DataBaseController(object):
             bool: True if the entry was added successfully, False otherwise.
         """
         car_plate_id = self.getIDFromPlateNumber(plate_number)
-        if car_plate_id is None:
-            result = self.cursor.execute("INSERT INTO car_movements_not_allowed (plate_number, entry_time) VALUES (%s,%s)",
-                                (plate_number, datetime.datetime.now()))
-
-        else:
-            result = self.cursor.execute("INSERT INTO car_movements (car_plate_id, entry_time) VALUES (%s,%s)",
+        result = self.cursor.execute("INSERT INTO car_movements (car_plate_id, entry_time) VALUES (%s,%s)",
                                 (car_plate_id, datetime.datetime.now()))
 
         if result == 0:
@@ -114,12 +109,7 @@ class DataBaseController(object):
             bool: True if the exit was added successfully, False otherwise.
         """
         car_plate_id = self.getIDFromPlateNumber(plate_number)
-        if car_plate_id is None:
-            result = self.cursor.execute("UPDATE car_movements_not_allowed SET exit_time = %s WHERE plate_number = %s AND exit_time is NULL",
-                                 (datetime.datetime.now(), plate_number))
-
-        else:
-            result = self.cursor.execute("UPDATE car_movements SET exit_time = %s WHERE car_plate_id = %s AND exit_time IS NULL",
+        result = self.cursor.execute("UPDATE car_movements SET exit_time = %s WHERE car_plate_id = %s AND exit_time IS NULL",
                                 (datetime.datetime.now(), car_plate_id))
 
         if result == 0:
