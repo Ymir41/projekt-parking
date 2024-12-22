@@ -1,5 +1,3 @@
-from tkinter import Entry
-
 from  Signal import Signal
 import cv2
 import numpy as np
@@ -11,7 +9,14 @@ from src.Trackers.EntryTracker import EntryTracker
 
 
 class ParkBot(object):
-    def __init__(self, cap) -> None:
+    """
+    A Class that monitors all relevant changes on the parking
+    and announces them through Signals.
+    """
+    def __init__(self, cap: cv2.VideoCapture) -> None:
+        """
+        :param cap: a cv2.VideoCapture video of parking
+        """
         self.cap = cap
         self.width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -34,16 +39,19 @@ class ParkBot(object):
         self.spotTracker = SpotTracker(self.spots)
         self.entryTracker = EntryTracker(self.checkCar, self.carAllowedToEnter, self.readyToCloseEntryGate);
         self.parkingState = {} # contains parkingSpot:carPlate
-        self.threshold = np.zeros(3)
-        self.tul = 0
 
-    def setCheckCar(self, func):
+    def setCheckCar(self, func) -> None:
+        """
+        Sets the function used to determine whether car of given plate is allowed in.
+        :param func: a function used to determine whether car of given plate number is allowed in.
+        """
         self.checkCar = func
         self.entryTracker.isCarAllowed = func
 
     def __call__(self):
         pass
 
-    def parkingDiffPlates(self, oldParkingState, newParkingState)->list:
+    def parkingDiffSpots(self, oldParkingState, newParkingState)->list:
+        ""
         return []
 
