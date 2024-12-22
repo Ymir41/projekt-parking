@@ -1,14 +1,8 @@
-#import unittest
-#from unittest.mock import patch, MagicMock
-#import MySQLdb
-import sys
-import os
 import MySQLdb
 import unittest
 from pathlib import Path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))) 
 
-from DataBaseController import DataBaseController
+from src.DataBaseController import DataBaseController
 
 class TestDataBaseController(unittest.TestCase):
     """

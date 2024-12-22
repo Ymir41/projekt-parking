@@ -1,10 +1,6 @@
 import unittest
-import sys
-import os
 
-# Dodaj folder "src" do ścieżki
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))) 
-from Signal import Signal
+from src.Signal import Signal
 
 class TestSignal(unittest.TestCase):
 
