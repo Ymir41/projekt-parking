@@ -1,9 +1,7 @@
 import numpy as np
 from Tracker import Tracker
-import sys
-import os
 
-from src.Trackables.Spots import Spots
+from src.Trackables.Spots import Spots, Spot
 
 class SpotTracker(Tracker):
     """

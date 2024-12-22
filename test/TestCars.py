@@ -1,78 +1,130 @@
 import unittest
-import numpy as np
-import sys
-import os
 
-# Dodaj folder "src" do ścieżki
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))) 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src/Trackables"))) 
-from Car import Car
-from Cars import Cars
+from src.Trackables.Cars import Cars, Car
 
 class TestCars(unittest.TestCase):
+    def setUp(self):
+        self.dims = (100, 100)
 
     def test_initialization(self):
-        dims = (5, 5)
-        cars = Cars(dims)
+        cars = Cars(self.dims)
         
-        self.assertEqual(len(cars.cars), 0)
-        self.assertTrue(np.array_equal(cars.locations, np.full(dims, -1)))
+        self.assertEqual(len(cars), 0)
+        self.assertEqual(cars.getDimensions(), self.dims)
+
+    def test_copy(self):
+        cars = Cars(self.dims)
+        plate1 = "ABC123"
+        car1 = Car(plate1, (0, 0, 10, 10))
+        plate2 = "XYZ789"
+        car2 = Car(plate2, (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+
+        cars2 = cars.copy()
+        self.assertEqual(len(cars2), 2)
+        self.assertEqual(cars2.getCarOfLocation(3, 3).plate, plate1)
+        self.assertEqual(cars2.getCarOfLocation(12, 12).plate, plate2)
+        plate3 = "QWE456"
+        car3 = Car(plate3, (22, 22, 32, 32))
+        cars2.append(car3)
+        self.assertEqual(len(cars2), 3)
+        self.assertEqual(cars2.getCarOfLocation(23, 23).plate, plate3)
+        self.assertEqual(len(cars), 2)
+        self.assertEqual(cars.getCarOfLocation(23, 23), None)
+
+        cars2.moveCar(0, (33, 33, 43, 43))
+        self.assertEqual(cars2[0].getBox(), (33, 33, 43, 43))
+        self.assertEqual(cars[0].getBox(), (0,0,10,10))
+        self.assertEqual(cars2.getCarOfLocation(34, 34).plate, plate1)
+        self.assertEqual(cars.getCarOfLocation(34, 34), None)
+
+        cars.moveCar(1, (44, 44, 54, 54))
+        self.assertEqual(cars[1].getBox(), (44, 44, 54, 54))
+        self.assertEqual(cars2[1].getBox(), (11, 11, 21, 21))
+        self.assertEqual(cars.getCarOfLocation(45, 45).plate, plate2)
+        self.assertEqual(cars2.getCarOfLocation(45, 45), None)
+
+    def test_getIndexFromPlate(self):
+        cars = Cars(self.dims)
+        plate1 = "ABC123"
+        car1 = Car(plate1, (0, 0, 10, 10))
+        plate2 = "XYZ789"
+        car2 = Car(plate2, (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+        self.assertEqual(cars.getIndexFromPlate(plate1), 0)
+        self.assertEqual(cars.getIndexFromPlate(plate2), 1)
+        with self.assertRaises(IndexError):
+            cars.getIndexFromPlate("NONEXIST")
+
+    def test_getPlateFromIndex(self):
+        cars = Cars(self.dims)
+        plate1 = "ABC123"
+        car1 = Car(plate1, (0, 0, 10, 10))
+        plate2 = "XYZ789"
+        car2 = Car(plate2, (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+        self.assertEqual(cars.getPlateFromIndex(0), plate1)
+        self.assertEqual(cars.getPlateFromIndex(1), plate2)
+        with self.assertRaises(IndexError):
+            cars.getPlateFromIndex(3)
 
     def test_append_car(self):
-        dims = (5, 5)
-        cars = Cars(dims)
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
+        cars = Cars(self.dims)
+        plate = "ABC123"
+        car1 = Car(plate,(0, 0, 10, 10))
         
         cars.append(car1)
         
-        self.assertEqual(len(cars.cars), 1)
-        self.assertEqual(cars[0].plate, "ABC123")
-        self.assertEqual(cars.locations[2, 3], 1) 
+        self.assertEqual(len(cars), 1)
+        self.assertEqual(cars[0].plate, plate)
+        self.assertEqual(cars.getCarOfLocation(2, 3).plate, plate)
 
     def test_move_car(self):
-        dims = (5, 5)
-        cars = Cars(dims)
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
+        cars = Cars(self.dims)
+        plate = "ABC123"
+        car1 = Car(plate,  (0, 0, 10, 10))
         
         cars.append(car1)
-        cars.moveCar(0, (4, 4))
+        cars.moveCar(0, (11, 11, 21, 21))
         
-        self.assertEqual(cars[0].location, (4, 4))
-        self.assertEqual(cars.locations[2, 3], -1)
-        self.assertEqual(cars.locations[4, 4], 1)
+        self.assertEqual(cars[0].getBox(), (11, 11, 21, 21))
+        self.assertEqual(cars.getCarOfLocation(15, 15), plate)
 
     def test_move_car_to_occupied_location(self):
-        dims = (5, 5)
-        cars = Cars(dims)
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
-        car2 = Car("XYZ789", (4, 4), (0, 0, 10, 10))
+        cars = Cars(self.dims)
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789",  (11, 11, 21, 21))
         
         cars.append(car1)
         cars.append(car2)
         
         with self.assertRaises(ValueError): 
-            cars.moveCar(0, (4, 4))
+            cars.moveCar(0, (11, 11, 21, 21) )
 
     def test_remove_by_plate(self):
-        dims = (5, 5)
-        cars = Cars(dims)
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
-        car2 = Car("XYZ789", (4, 4), (0, 0, 10, 10))
+        cars = Cars(self.dims)
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789", ( 11, 11, 21, 21))
         
         cars.append(car1)
         cars.append(car2)
         
         cars.removeByPlate("ABC123")
         
-        self.assertEqual(len(cars.cars), 1)
+        self.assertEqual(len(cars), 1)
         self.assertEqual(cars[0].plate, "XYZ789")
-        self.assertEqual(cars.locations[2, 3], -1) 
-        self.assertEqual(cars.locations[4, 4], 2) 
+        self.assertEqual(cars.getCarOfLocation(2, 2), None)
+        self.assertEqual(cars.getCarOfLocation(12, 22).plate, "XYZ789")
 
     def test_remove_nonexistent_plate(self):
-        dims = (5, 5)
-        cars = Cars(dims)
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
+        cars = Cars(self.dims)
+        car1 = Car("ABC123",(0, 0, 10, 10))
         
         cars.append(car1)
         
@@ -80,44 +132,26 @@ class TestCars(unittest.TestCase):
             cars.removeByPlate("XYZ789")
 
     def test_empty_cars(self):
-        dims = (5, 5)
-        cars = Cars(dims)
+        cars = Cars(self.dims)
         
         self.assertFalse(bool(cars))
-        self.assertEqual(len(cars.cars), 0)
-        self.assertTrue(np.array_equal(cars.locations, np.full(dims, -1)))
-
-    def test_set_item(self):
-        dims = (5, 5)
-        cars = Cars(dims)
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
-        
-        cars.append(car1)
-        car2 = Car("XYZ789", (1, 1), (0, 0, 10, 10))
-        
-        cars[0] = car2
-        
-        self.assertEqual(cars[0].plate, "XYZ789")
-        self.assertEqual(cars.locations[2, 3], -1)
-        self.assertEqual(cars.locations[1, 1], 1)
+        self.assertEqual(len(cars), 0)
 
     def test_bool_method(self):
-        dims = (5, 5)
-        cars = Cars(dims)
+        cars = Cars(self.dims)
         
-        self.assertFalse(bool(cars))  # Powinna być False, gdy cars jest puste
+        self.assertFalse(bool(cars), )  # Powinna być False, gdy cars jest puste
         
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
+        car1 = Car("ABC123", (0, 0, 10, 10))
         cars.append(car1)
         
         self.assertTrue(bool(cars))  # Powinna być True, gdy cars zawiera elementy
 
     def test_iter_method(self):
-        dims = (5, 5)
-        cars = Cars(dims)
+        cars = Cars(self.dims)
         
-        car1 = Car("ABC123", (2, 3), (0, 0, 10, 10))
-        car2 = Car("XYZ789", (4, 4), (0, 0, 10, 10))
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789", (11, 11, 21, 21))
         
         cars.append(car1)
         cars.append(car2)
@@ -130,13 +164,134 @@ class TestCars(unittest.TestCase):
             next(cars_iterator)
 
     def test_iter_with_empty_list(self):
-        dims = (5, 5)
-        cars = Cars(dims)
+        cars = Cars(self.dims)
         
         cars_iterator = iter(cars)
         with self.assertRaises(StopIteration):  # Iterator od razu powinien się skończyć
             next(cars_iterator)
 
+    def test_updateCarsPositions_with_full_plates(self):
+        cars = Cars(self.dims)
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789", (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+
+        # With positions overlapping
+        cars2 = Cars(self.dims)
+        car1_2 = Car("ABC123", (3, 3 , 13, 13))
+        car2_2 = Car("XYZ789", (14, 14, 24, 24))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (3, 3, 13, 13))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (14, 14, 24, 24))
+
+        # Far away
+        cars2 = Cars(self.dims)
+        car1_2 = Car("ABC123", (70, 70, 80, 80))
+        car2_2 = Car("XYZ789", (84, 84, 94, 94))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (70, 70, 80, 80))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (84, 84, 94, 94))
+
+    def test_updateCarsPositions_with_some_plates(self):
+        cars = Cars(self.dims)
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789", (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+
+        # With positions overlapping
+        cars2 = Cars(self.dims)
+        car1_2 = Car("ABC123", (3, 3, 13, 13))
+        car2_2 = Car(None, (14, 14, 24, 24))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (3, 3, 13, 13))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (14, 14, 24, 24))
+
+        # Far away
+        cars2 = Cars(self.dims)
+        car1_2 = Car("ABC123", (70, 70, 80, 80))
+        car2_2 = Car(None, (15, 15, 25, 25))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (70, 70, 80, 80))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (15, 15, 25, 25))
+
+    def test_updateCarsPositions_without_plates(self):
+        cars = Cars(self.dims)
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789", (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+
+        # With positions overlapping
+        cars2 = Cars(self.dims)
+        car1_2 = Car(None, (3, 3, 13, 13))
+        car2_2 = Car(None, (14, 14, 24, 24))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (3, 3, 13, 13))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (14, 14, 24, 24))
+
+        # Further away
+        cars2 = Cars(self.dims)
+        car1_2 = Car(None, (8, 8, 18, 18))
+        car2_2 = Car(None, (15, 15, 25, 25))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (8, 8, 18, 18))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (15, 15, 25, 25))
+
+    def test_updateCarsPositions_without_plates_no_overlap(self):
+        cars = Cars(self.dims)
+        car1 = Car("ABC123", (0, 0, 10, 10))
+        car2 = Car("XYZ789", (11, 11, 21, 21))
+
+        cars.append(car1)
+        cars.append(car2)
+
+        # With positions overlapping
+        cars2 = Cars(self.dims)
+        car1_2 = Car(None, (0, 15, 10, 25))
+        car2_2 = Car(None, (14, 14, 24, 24))
+
+        cars2.append(car1_2)
+        cars2.append(car2_2)
+
+        cars_test = cars.copy()
+        cars_test.updateCarsPositions(cars2)
+        self.assertEqual(cars_test["ABC123"].getBox(), (0, 15, 10, 25))
+        self.assertEqual(cars_test["XYZ789"].getBox(), (14, 14, 24, 24))
 
 if __name__ == "__main__":
     unittest.main()

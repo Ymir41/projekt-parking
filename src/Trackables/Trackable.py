@@ -4,10 +4,15 @@ class Trackable(object):
     """
     Abstract class of Trackable.
     """
-    def __init__(self, location, box) -> None:
-        self.__location = location
+    def __init__(self, box: tuple[int, int, int, int]) -> None:
+        """
+        :param box: a box around the object (x1, y1, x2, y2) - upper left and bottom right corners
+        """
+        self.__setBox(box)
+
+    def __setBox(self, box: tuple[int, int, int, int]):
         self.__box = box
-        self.__moved = Signal() # location: tuple
+        self.__location = ((box[0]+box[2])//2, (box[1] + box[3])//2)
 
     def getBox(self):
         return self.__box
@@ -15,12 +20,3 @@ class Trackable(object):
     def getLocation(self):
         return self.__location
 
-    def move(self, new_location: tuple[2], new_box: tuple[4]) -> None:
-        """
-        Moves the object around the image.
-        :param new_location: the new location of the Trackable (x, y)
-        :param new_box: the new box around the trackable (x1, y1, x2, y2)
-        """
-        self.location = new_location
-        self.box = new_box
-        self.moved.emit(new_location)

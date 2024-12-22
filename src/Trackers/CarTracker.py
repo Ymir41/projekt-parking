@@ -1,10 +1,7 @@
 import numpy as np
-import sys
-import os
-
 
 from src.Trackers.Tracker import Tracker
-from src.Trackables.Cars import Cars
+from src.Trackables.Cars import Cars, Car
 
 class CarTracker(Tracker):
     """
@@ -23,7 +20,7 @@ class CarTracker(Tracker):
         """
         pass
 
-    def locate_cars(self, img: np.ndarray) -> Cars:
+    def locateCars(self, img: np.ndarray) -> Cars:
         """
         It locates cars on an image of parking and returns them with their positions and boxes.
         Cars returned do not have plate numbers.

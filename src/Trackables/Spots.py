@@ -1,21 +1,21 @@
-from Cars import Cars
-from Spot import Spot
+from src.Trackables.Cars import Cars
+from src.Trackables.Spot import Spot
 
 class Spots(object):
     """
     It holds parking spots.
     """
     def __init__(self) -> None:
-        self.spots = {}
+        self.__spots = {}
 
-    def __iter__(self):
-        return self.spots.values().__iter__()
+    def items(self):
+        return self.__spots.items()
     
     def append(self, spot: Spot) -> None:
         """
         :param spot: A spot to be added.
         """
-        self.spots[spot.number] = Spot
+        self.__spots[spot.number] = Spot
 
     def parkedCars(self, cars: Cars) -> dict:
         """
@@ -25,12 +25,12 @@ class Spots(object):
         """
         pass
 
-    def __sizeof__(self) -> int:
-        return len(self.spots)
+    def __len__(self) -> int:
+        return len(self.__spots)
 
     def __getitem__(self, index: int) -> Spot:
-        return self.spots[index]
+        return self.__spots[index]
 
     def __bool__(self) -> bool:
-        return len(self.spots)>0
+        return len(self.__spots)>0
 
