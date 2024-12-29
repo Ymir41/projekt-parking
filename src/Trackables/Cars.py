@@ -1,8 +1,9 @@
 import numpy as np
 from src.Trackables.Car import Car, Box
+from src.Trackables.TrackableCollection import TrackableCollection
 from typing_extensions import Self
 
-class Cars(object):
+class Cars(TrackableCollection):
     """
     It holds cars on the parking.
     """
@@ -26,6 +27,9 @@ class Cars(object):
 
     def __len__(self):
         return len(self.__cars)
+
+    def trackables(self) -> list[tuple[any, any]]:
+            return [(car.label, car.getBox()) for car in self.__cars]
 
     def copy(self) -> Self:
         """

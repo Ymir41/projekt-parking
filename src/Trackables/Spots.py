@@ -10,7 +10,10 @@ class Spots(object):
 
     def items(self):
         return self.__spots.items()
-    
+
+    def trackables(self) -> list[tuple[any, any]]:
+        return [(spot.label, spot.getBox()) for spot in self.__spots.values()]
+
     def append(self, spot: Spot) -> None:
         """
         :param spot: A spot to be added.
