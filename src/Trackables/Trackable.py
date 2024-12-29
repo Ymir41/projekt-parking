@@ -1,5 +1,5 @@
-from src.Signal import Signal
 from src.Trackables.Box import Box
+from typing_extensions import Self
 
 class Trackable(object):
     """
@@ -16,5 +16,9 @@ class Trackable(object):
         return self.__box
 
     def getLocation(self):
-        return self.__box.middle()
+        return self.getBox().middle()
 
+    def __eq__(self, other: Self):
+        if not isinstance(other, Trackable):
+            return NotImplemented
+        return self.getBox() == other.getBox()

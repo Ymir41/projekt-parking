@@ -100,7 +100,7 @@ class TestSpots(unittest.TestCase):
         i = 0
         s = [spot1, spot2]
         for num, spot in spots.items():
-            self.assertEqual(num, 1, "wrong number of spot")
+            self.assertEqual(num, i+1, "wrong number of spot")
             self.assertEqual(spot, s[i], "wrong spot")
             i+=1
         self.assertEqual(i, 2, f"There should be 2 items in spots.items(), found {i}")

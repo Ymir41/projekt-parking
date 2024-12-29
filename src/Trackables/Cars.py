@@ -90,15 +90,22 @@ class Cars(TrackableCollection):
         """
         :param index: index in self.__cars of car to be removed
         """
-        pass
+        if index>len(self.__cars):
+            raise IndexError("Index out of range")
+
+        self.__locations = np.where(self.__locations == index, -1, self.__locations)
+        self.__locations = np.where(self.__locations > index, self.__locations-1, self.__locations)
+        del self.__cars[index]
 
     def removeByPlate(self, plate:str):
         """
         Removes car of given plate number from its self (this instance of Cars class, does not affect any database).
         :param plate: plate number of car to be removed
-        :return:
         """
-        pass
+        index = self.getIndexFromPlate(plate)
+        if index is None:
+            raise ValueError("Car of this plate does not exist.")
+        self.__remove(self.getIndexFromPlate(plate))
 
     def getPlateFromIndex(self, index: int) -> str:
         return self.__cars[index].label

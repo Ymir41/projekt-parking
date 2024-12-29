@@ -18,7 +18,10 @@ class Spots(object):
         """
         :param spot: A spot to be added.
         """
-        self.__spots[spot.label] = Spot
+        self.__spots[spot.label] = spot
+
+    def remove(self, index: int):
+        del self.__spots[index]
 
     def parkedCars(self, cars: Cars) -> dict:
         """
@@ -26,7 +29,15 @@ class Spots(object):
         :param cars: A Cars object that has the cars to determine which are parked and where.
         :return: dictionary - key: a spot number, value: a car plate number
         """
-        pass
+        spots = {}
+        for number, spot in self.items():
+            location = spot.getLocation()
+            car = cars.getCarOfLocation(*location)
+            if car is None:
+                spots[number] = None
+            else:
+                spots[number] = car.label
+        return spots
 
     def __len__(self) -> int:
         return len(self.__spots)

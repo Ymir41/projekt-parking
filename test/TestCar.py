@@ -10,8 +10,16 @@ class TestCar(unittest.TestCase):
         
         car = Car(plate, box)
 
-        self.assertEqual(car.plate, plate)
+        self.assertEqual(car.label, plate)
         self.assertEqual(car.getBox(), box)
+
+
+    def test_str(self):
+        plate = "ABC123"
+        box = Box(0, 0, 100, 0, 0, 100, 100, 100)
+
+        spot = Car(plate, box)
+        self.assertEqual("Car(\"ABC123\", Box(0, 0, 100, 0, 0, 100, 100, 100))", spot.__str__())
 
 if __name__ == "__main__":
     unittest.main()

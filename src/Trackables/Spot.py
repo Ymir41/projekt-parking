@@ -11,3 +11,9 @@ class Spot(Trackable):
         :param box: the box around that spot (x1, y1, x2, y2) - upper left and bottom right corners
         """
         super().__init__(number, box)
+
+    def __str__(self):
+        return f"Spot({self.label}, {self.getBox()})"
+
+    def __repr__(self):
+        return self.__str__()

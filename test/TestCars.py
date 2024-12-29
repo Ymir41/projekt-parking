@@ -120,7 +120,7 @@ class TestCars(unittest.TestCase):
         self.assertEqual(len(cars), 1)
         self.assertEqual(cars[0].label, "XYZ789")
         self.assertEqual(cars.getCarOfLocation(2, 2), None)
-        self.assertEqual(cars.getCarOfLocation(12, 22).label, "XYZ789")
+        self.assertEqual(cars.getCarOfLocation(12, 20).label, "XYZ789")
 
     def test_remove_nonexistent_plate(self):
         cars = Cars(self.dims)

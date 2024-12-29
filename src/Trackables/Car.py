@@ -19,6 +19,12 @@ class Car(Trackable):
         out = self.__class__(self.label, self.getBox())
         return out
 
+    def __str__(self):
+        return f"Car(\"{self.label}\", {self.getBox()})"
+
+    def __repr__(self):
+        return self.__str__()
+
     @restrict_access("Cars")
     def move(self,  new_box: Box) -> None:
         """
