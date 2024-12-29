@@ -1,5 +1,5 @@
 import numpy as np
-from Tracker import Tracker
+from src.Trackers.Tracker import Tracker
 
 from src.Trackables.Spots import Spots, Spot
 

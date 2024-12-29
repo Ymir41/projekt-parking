@@ -1,12 +1,12 @@
 import unittest
 
-from src.Trackables.Trackable import Trackable
+from src.Trackables.Trackable import Trackable, Box
 
 class TestTrackable(unittest.TestCase):
     
     def test_initialization(self):
-        box = (0, 0, 100, 100)
-        trackable = Trackable(box)
+        box = Box.from2Corners(0, 0, 100, 100)
+        trackable = Trackable(None, box)
         
         self.assertEqual(trackable.getBox(), box)
 

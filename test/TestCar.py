@@ -1,12 +1,12 @@
 import unittest
 
-from src.Trackables.Car import Car
+from src.Trackables.Car import Car, Box
 
 class TestCar(unittest.TestCase):
 
     def test_initialization(self):
         plate = "ABC123"
-        box = (20, 20, 150, 150)
+        box = Box.from2Corners(20, 20, 150, 150)
         
         car = Car(plate, box)
 

@@ -1,7 +1,7 @@
 import numpy as np
 
 from src.Trackers.Tracker import Tracker
-from src.Trackables.Cars import Cars, Car
+from src.Trackables.Cars import Cars, Car, Box
 
 class CarTracker(Tracker):
     """

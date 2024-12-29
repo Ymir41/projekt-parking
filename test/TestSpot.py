@@ -1,16 +1,16 @@
 import unittest
 
-from src.Trackables.Spot import Spot
+from src.Trackables.Spot import Spot, Box
 
 class TestSpot(unittest.TestCase):
 
     def test_initialization(self):
         number = 1
-        box = (0, 0, 100, 100)
+        box = Box.from2Corners(0, 0, 100, 100)
         
         spot = Spot(number, box)
 
-        self.assertEqual(spot.number, number)
+        self.assertEqual(spot.label, number)
         self.assertEqual(spot.getBox(), box)
 
 

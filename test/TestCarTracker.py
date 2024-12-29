@@ -4,7 +4,7 @@ import os
 import json
 from pathlib import Path
 
-from src.Trackers.CarTracker import CarTracker, Cars, Car
+from src.Trackers.CarTracker import CarTracker, Cars, Car, Box
 
 
 class TestCarTracker(unittest.TestCase):
@@ -17,22 +17,6 @@ class TestCarTracker(unittest.TestCase):
         cls.test_folder = Path(__file__).parent / "testCars"
         if not os.path.exists(cls.test_folder):
             raise FileNotFoundError(f"Test folder '{cls.test_folder}' not found.")
-
-    @staticmethod
-    def boxes_match(expected_box, actual_box, tolerance=0.1):
-        """
-        Check if two boxes match within a given tolerance.
-        :param expected_box: tuple (x1, y1, x2, y2) - the expected box.
-        :param actual_box: tuple (x1, y1, x2, y2) - the actual box.
-        :param tolerance: float - allowed error margin as a fraction of the box size.
-        :return: bool - True if the boxes match within the tolerance, False otherwise.
-        """
-        for i in range(4):
-            size = expected_box[i % 2 + 2] - expected_box[i % 2]  # Size in x or y dimension
-            error_margin = abs(size * tolerance)
-            if not (expected_box[i] - error_margin <= actual_box[i] <= expected_box[i] + error_margin):
-                return False
-        return True
 
     def test_locateCars(self):
         """
@@ -65,7 +49,7 @@ class TestCarTracker(unittest.TestCase):
             for key, val in expected_data.items():
                 if key == "number":
                     continue
-                expected_box = tuple(val)
+                expected_box = Box(*val)
                 plate = key
                 expected_car = Car(plate, expected_box)
                 car = located_cars.getCarOfLocation(*expected_car.getLocation())
@@ -74,13 +58,13 @@ class TestCarTracker(unittest.TestCase):
                 actual_box = car.getBox()
                 tolerance = 5
                 self.assertTrue(
-                    self.boxes_match(tuple(expected_box), actual_box, tolerance=(tolerance/100)),
+                    Box.almostEquel(expected_box, actual_box, tolerance=(tolerance/100)),
                     f"Box mismatch for car of plate {plate} in image: {img_file}. "
                     f"Expected: {expected_box} +/- {tolerance}%, Actual: {actual_box}"
                 )
                 self.assertTrue(
-                    car.plate is None or car.plate == plate,
-                    f"Car of plate {plate} has plate {car.plate}."
+                    car.plate is None or car.label == plate,
+                    f"Car of plate {plate} has plate {car.label}."
                     f"Should be None or {plate}"
                 )
 

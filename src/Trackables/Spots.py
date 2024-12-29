@@ -15,7 +15,7 @@ class Spots(object):
         """
         :param spot: A spot to be added.
         """
-        self.__spots[spot.number] = Spot
+        self.__spots[spot.label] = Spot
 
     def parkedCars(self, cars: Cars) -> dict:
         """

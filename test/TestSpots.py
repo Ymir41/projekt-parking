@@ -1,14 +1,14 @@
 import unittest
 
 from src.Trackables.Spots import Spots, Spot
-from src.Trackables.Cars import Cars, Car
+from src.Trackables.Cars import Cars, Car, Box
 
 class TestSpots(unittest.TestCase):
 
     def test_append_and_size(self):
         spots = Spots()
-        spot1 = Spot(1,  (0, 0, 50, 50))
-        spot2 = Spot(2,  (50, 50, 100, 100))
+        spot1 = Spot(1,  Box.from2Corners(0, 0, 50, 50))
+        spot2 = Spot(2,  Box.from2Corners(50, 50, 100, 100))
         
         spots.append(spot1)
         spots.append(spot2)
@@ -19,8 +19,8 @@ class TestSpots(unittest.TestCase):
 
     def test_getitem(self):
         spots = Spots()
-        spot1 = Spot(1, (0, 0, 50, 50))
-        spot2 = Spot(2,  (50, 50, 100, 100))
+        spot1 = Spot(1, Box.from2Corners(0, 0, 50, 50))
+        spot2 = Spot(2,  Box.from2Corners(50, 50, 100, 100))
         
         spots.append(spot1)
         spots.append(spot2)
@@ -33,8 +33,8 @@ class TestSpots(unittest.TestCase):
 
     def test_parkedCars_with_empty_spots(self):
         spots = Spots()
-        spot1 = Spot(1, (0, 0, 50, 50))
-        spot2 = Spot(2,  (50, 50, 100, 100))
+        spot1 = Spot(1, Box.from2Corners(0, 0, 50, 50))
+        spot2 = Spot(2,  Box.from2Corners(50, 50, 100, 100))
         cars = Cars((100, 100))
         
         spots.append(spot1)
@@ -45,11 +45,11 @@ class TestSpots(unittest.TestCase):
 
     def test_parkedCars_with_cars(self):
         spots = Spots()
-        spot1 = Spot(1, (0, 0, 50, 50))
-        spot2 = Spot(2,  (50, 50, 100, 100))
+        spot1 = Spot(1, Box.from2Corners(0, 0, 50, 50))
+        spot2 = Spot(2,  Box.from2Corners(50, 50, 100, 100))
         
-        car1 = Car("ABC123", (0, 0, 50, 50))
-        car2 = Car("XYZ789",  (50, 50, 100, 100))
+        car1 = Car("ABC123", Box.from2Corners(0, 0, 50, 50))
+        car2 = Car("XYZ789",  Box.from2Corners(50, 50, 100, 100))
 
         cars = Cars((200, 200))
         cars.append(car1)
@@ -63,11 +63,11 @@ class TestSpots(unittest.TestCase):
 
     def test_parkedCars_mixed(self):
         spots = Spots()
-        spot1 = Spot(1, (0, 0, 50, 50))
-        spot2 = Spot(2,  (50, 50, 100, 100))
+        spot1 = Spot(1, Box.from2Corners(0, 0, 50, 50))
+        spot2 = Spot(2,  Box.from2Corners(50, 50, 100, 100))
         
-        car1 = Car("ABC123",  (0, 0, 50, 50))
-        car2 = Car("XYZ890", (52, 1, 102, 51))
+        car1 = Car("ABC123",  Box.from2Corners(0, 0, 50, 50))
+        car2 = Car("XYZ890", Box.from2Corners(52, 1, 102, 51))
         cars = Cars((200, 200))
         cars.append(car1)
         cars.append(car2)
@@ -83,7 +83,7 @@ class TestSpots(unittest.TestCase):
         
         self.assertFalse(bool(spots))  # Powinno być False, gdy spots jest pusty
         
-        spot1 = Spot(1, (0, 0, 50, 50))
+        spot1 = Spot(1, Box.from2Corners(0, 0, 50, 50))
         spots.append(spot1)
         
         self.assertTrue(bool(spots))  # Powinno być True, gdy spots zawiera elementy
@@ -91,8 +91,8 @@ class TestSpots(unittest.TestCase):
     def test_items_method(self):
         spots = Spots()
         
-        spot1 = Spot(1,  (0, 0, 50, 50))
-        spot2 = Spot(2,  (50, 50, 100, 100))
+        spot1 = Spot(1,  Box.from2Corners(0, 0, 50, 50))
+        spot2 = Spot(2,  Box.from2Corners(50, 50, 100, 100))
         
         spots.append(spot1)
         spots.append(spot2)

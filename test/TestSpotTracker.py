@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from src.Trackers.SpotTracker import SpotTracker, Spots, Spot
+from src.Trackables.Box import Box
 
 
 class TestSpotTracker(unittest.TestCase):
@@ -17,22 +18,6 @@ class TestSpotTracker(unittest.TestCase):
         cls.test_folder = Path(__file__).parent / "testSpots"
         if not os.path.exists(cls.test_folder):
             raise FileNotFoundError(f"Test folder '{cls.test_folder}' not found.")
-
-    @staticmethod
-    def boxes_match(expected_box, actual_box, tolerance=0.1):
-        """
-        Check if two boxes match within a given tolerance.
-        :param expected_box: tuple (x1, y1, x2, y2) - the expected box.
-        :param actual_box: tuple (x1, y1, x2, y2) - the actual box.
-        :param tolerance: float - allowed error margin as a fraction of the box size.
-        :return: bool - True if the boxes match within the tolerance, False otherwise.
-        """
-        for i in range(4):
-            size = expected_box[i % 2 + 2] - expected_box[i % 2]  # Size in x or y dimension
-            error_margin = abs(size * tolerance)
-            if not (expected_box[i] - error_margin <= actual_box[i] <= expected_box[i] + error_margin):
-                return False
-        return True
 
     def test_track(self):
         """
@@ -66,13 +51,13 @@ class TestSpotTracker(unittest.TestCase):
                 if key == "number":
                     continue
                 number = int(key.replace("box", ""))
-                expected_box = tuple(val)
+                expected_box = Box(*val)
                 spot = spots[number]
                 self.assertIsNotNone(spot, f"Spot number {number} not found in image: {img_file}")
                 actual_box = spot.getBox()
-                tolerance = 5 # in percent
+                tolerance = 5 # in %
                 self.assertTrue(
-                    self.boxes_match(tuple(expected_box), actual_box, tolerance=(tolerance/100)),
+                    Box.almostEquel(expected_box, actual_box, tolerance=(tolerance/100)),
                     f"Box mismatch for spot {number} in image: {img_file}. "
                     f"Expected: {expected_box} +/- {tolerance}%, Actual: {actual_box}"
                 )

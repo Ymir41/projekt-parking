@@ -1,5 +1,5 @@
 import numpy as np
-from src.Trackables.Car import Car
+from src.Trackables.Car import Car, Box
 from typing_extensions import Self
 
 class Cars(object):
@@ -59,7 +59,7 @@ class Cars(object):
         :param plate: plate number of a car
         :return int: index of that car in self.__cars list
         """
-        self.__cars.index(plate)
+        return [car.label for car in self.__cars].index(plate)
 
     def moveCar(self, index: int, new_box: tuple[int, int, int, int]) -> None:
         """Allows to move car to the new location"""
@@ -78,8 +78,9 @@ class Cars(object):
             raise ValueError("Car of with location already occupied")
 
         self.__cars.append(car)
-        x1, y1, x2, y2 = car.getBox()
-        self.__locations[y1:y2, x1:x2] = len(self.__cars) - 1
+        box = car.getBox()
+        mask = box.getMask(self.__locations.shape)
+        self.__locations[mask] = len(self.__cars) - 1
 
     def __remove(self, index: int) -> None:
         """
@@ -96,6 +97,6 @@ class Cars(object):
         pass
 
     def getPlateFromIndex(self, index: int) -> str:
-        return self.__cars[index].plate
+        return self.__cars[index].label
 
 
