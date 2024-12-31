@@ -2,7 +2,6 @@ import cv2
 import easyocr
 import numpy as np
 from skimage import filters, morphology
-from src.DataBaseController import DataBaseController
 
 
 class LicensePlateReader:
@@ -34,7 +33,7 @@ class LicensePlateReader:
             print("Car with plate number", plate_number, "is allowed to enter.")
             return plate_number, res, True
 
-        print("Car with plate number", plate_number, "is not allowed to enter. Deep inspection in progress.")
+        print("Car with plate number", plate_number, "is not allowed. Deep inspection in progress.")
         return plate_number, res, False
 
     def read_plate(self, image: np.ndarray):
@@ -93,17 +92,23 @@ class LicensePlateReader:
         cropped_image_threshed = cropped_image > li_tresh
 
         uint8_cropped_image = np.uint8(cropped_image_threshed * 255)
-        plate_number, res = self.plate_read_check(uint8_cropped_image)
+        plate_number, res, is_allowed = self.plate_read_check(uint8_cropped_image)
         if plate_number != 0 and is_allowed:
             return plate_number
 
         cropped_image = np.uint8(cropped_image * 255)
-        plate_number, res = self.plate_read_check(cropped_image)
+        plate_number, res, is_allowed = self.plate_read_check(cropped_image)
         if plate_number != 0 and is_allowed:
             return plate_number
 
-        if plate_number:
+        adaptive_thresh = cv2.adaptiveThreshold(image_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                cv2.THRESH_BINARY, 11, 2)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        morph = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel)
+
+        plate_number, res, is_allowed = self.plate_read_check(morph)
+        if plate_number != 0 and is_allowed:
             return plate_number
 
         return None
-
