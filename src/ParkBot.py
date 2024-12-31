@@ -37,7 +37,8 @@ class ParkBot(object):
         self.spots = Spots()
         self.carTracker = CarTracker(self.cars)
         self.spotTracker = SpotTracker(self.spots)
-        self.entryTracker = EntryTracker(self.checkCar, self.carAllowedToEnter, self.readyToCloseEntryGate);
+        self.entryTracker = EntryTracker(self.checkCar, self.carAllowedToEnter, self.readyToCloseEntryGate,
+                                         self.carEntered)
         self.parkingState = {} # contains parkingSpot:carPlate
 
     def setCheckCar(self, func) -> None:
@@ -54,4 +55,3 @@ class ParkBot(object):
     def parkingDiffSpots(self, oldParkingState, newParkingState)->list:
         ""
         return []
-
