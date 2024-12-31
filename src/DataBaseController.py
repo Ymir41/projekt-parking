@@ -53,7 +53,6 @@ class DataBaseController(object):
         if car_plate_id is None:
             return None
         return car_plate_id[0]
-        return 
 
 
     @connect
@@ -82,7 +81,7 @@ class DataBaseController(object):
         Adds an entry record for a car.
 
         Args:
-            car_plate_id (int): The ID of the car plate.
+            plate_number (str): The plate number of the car plate.
 
         Returns:
             bool: True if the entry was added successfully, False otherwise.
@@ -151,4 +150,6 @@ class DataBaseController(object):
 
         self.connection.commit()
         return True
+
+
 
