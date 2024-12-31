@@ -2,13 +2,12 @@ import cv2
 import numpy as np
 import skimage.filters as filters
 
-import src.DataBaseController as DataBaseController
 import src.Readers.LicensePlateReader as PlateReader
 from src.Signal import Signal
 
 
 class EntryTracker:
-    def __init__(self, isCarAllowed, carAllowedToEnter: Signal, readyToCloseEntryGate: Signal):
+    def __init__(self, addCarEntry, isCarAllowed, carAllowedToEnter: Signal, readyToCloseEntryGate: Signal):
         """
         Initializes the EntryTracker.
         Args:
@@ -16,13 +15,15 @@ class EntryTracker:
             carAllowedToEnter - Signal that will be emmited when car that may enter is detected
             readyToCloseEntryGate - Signal that tells that the gate can be closed
         """
+        self.addCarEntry = addCarEntry
         self.isCarAllowed = isCarAllowed
         self.carAllowedToEnter = carAllowedToEnter
         self.readyToCloseEntryGate = readyToCloseEntryGate
         self.gateOpened = False
         self.car_position_box = None
         self.car_positions = []
-        self.car_plate_id = None
+        self.plate_number = None
+        self.first_frame = None
 
     def verifyCar(self, image: np.ndarray):
         """
@@ -34,9 +35,9 @@ class EntryTracker:
 
         """
         LicensePlateReader = PlateReader.LicensePlateReader(self.isCarAllowed)
-        car_plate_id, plate_number = LicensePlateReader.read_plate(image)
-        if car_plate_id != 0 and plate_number != 0:
-            self.car_plate_id = car_plate_id
+        plate_number = LicensePlateReader.read_plate(image)
+        if plate_number is not None:
+            self.plate_number = plate_number
             return True
         return False
 
@@ -60,22 +61,29 @@ class EntryTracker:
             if not ret:
                 break
 
-            frame = frame[int(frame.shape[0] / 1.3):frame.shape[0] - 200,
-                    int(frame.shape[1] / 2) + 100:frame.shape[1] - 1100]
-            frame = cv2.resize(frame, (640, 480))
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-            prepared_frame = cv2.rotate(frame, cv2.ROTATE_180)
+            height = frame.shape[0]
+            width = frame.shape[1]
+
+            frame = frame[int(height / 1.2):height, int(width / 1.9):width - 960]
+
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+
+            if self.first_frame is None:
+                self.first_frame = frame
 
             if self.gateOpened:
-                self.getCarPositionBox(prepared_frame)
+                self.getCarPositionBox(frame)
                 if self.car_position_box is None and self.gateOpened:
-                    print("here " + str(self.car_position_box))
+                    print("car passed the gate.")
                     self.closeGate()
                     continue
 
-            if self.verifyCar(prepared_frame):
+            if self.verifyCar(frame):
                 if not self.gateOpened:
-                    self.openGate(self.car_plate_id)
+                    print("Car detected.")
+                    self.openGate(self.plate_number)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -94,23 +102,25 @@ class EntryTracker:
             image: The image to process.
 
         Returns: None
-
         """
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(gray, (9, 9), 9)
+        background = cv2.cvtColor(self.first_frame, cv2.COLOR_BGR2GRAY)
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        blurred_img = cv2.GaussianBlur(image_gray, (9, 9), 9)
+        blurred_bg = cv2.GaussianBlur(background, (9, 9), 9)
+        diff = cv2.absdiff(blurred_bg, blurred_img)
+
+        blurred = diff
 
         thresh = filters.threshold_li(blurred)
-        binary = blurred > thresh
+        binary = blurred < thresh
         binary = np.invert(binary)
         binary = np.uint8(binary * 255)
-        cv2.imshow("Binary", binary)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 30))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (40, 40))
         morph = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-        cv2.imshow("Morph", morph)
         morph = cv2.copyMakeBorder(morph, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         edges = cv2.Canny(morph, 30, 100)
-
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
 
@@ -120,7 +130,6 @@ class EntryTracker:
         min_distance = float('inf')
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
-            print(f"Area: {cv2.contourArea(contour)}")
             if min_area < cv2.contourArea(contour):
                 if last_position:
                     contour_center = (x + w // 2, y + h // 2)
@@ -128,11 +137,9 @@ class EntryTracker:
                         last_position["X"] + last_position["Width"] // 2,
                         last_position["Y"] + last_position["Height"] // 2,
                     )
-                    # Calculate distance
                     distance = ((contour_center[0] - last_center[0]) ** 2 +
                                 (contour_center[1] - last_center[1]) ** 2) ** 0.5
-                    print(f"Distance: {distance}")
-                    if distance < min_distance and distance < 250:
+                    if distance < min_distance and distance < 500:
                         min_distance = distance
                         car_contour = contour
                 else:
@@ -146,13 +153,9 @@ class EntryTracker:
 
             output = image.copy()
             cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.imshow("Detected Car", output)
-            cv2.waitKey(1)
         else:
-            cv2.imshow("Not Detected Car", image)
-            cv2.waitKey(1)
             self.car_positions = []
-            self.car_plate_id = None
+            self.plate_number = None
             self.car_position_box = None
 
     def recordCarPosition(self, x, y, w, h):
@@ -170,17 +173,16 @@ class EntryTracker:
         self.car_positions.append(position)
         print(f"Recorded car position: {position}")
 
-    def openGate(self, car_plate_id: int):
+    def openGate(self):
         """
         Opens the gate for a car. Adds an entry record to the database.
-        Args:
-            car_plate_id: The ID of the car plate.
 
         Returns: None
 
         """
         self.carAllowedToEnter.emit()
         self.gateOpened = True
+        self.addCarEntry(self.plate_number)
 
     def closeGate(self):
         """
