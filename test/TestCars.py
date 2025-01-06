@@ -36,7 +36,7 @@ class TestCars(unittest.TestCase):
 
         cars2.moveCar(0, Box.from2Corners(33, 33, 43, 43))
         self.assertEqual(cars2[0].getBox(), Box.from2Corners(33, 33, 43, 43))
-        self.assertEqual(cars[0].getBox(), (0,0,10,10))
+        self.assertEqual(cars[0].getBox(), Box.from2Corners(0, 0, 10, 10))
         self.assertEqual(cars2.getCarOfLocation(34, 34).label, plate1)
         self.assertEqual(cars.getCarOfLocation(34, 34), None)
 
@@ -94,7 +94,7 @@ class TestCars(unittest.TestCase):
         cars.moveCar(0, Box.from2Corners(11, 11, 21, 21))
         
         self.assertEqual(cars[0].getBox(), Box.from2Corners(11, 11, 21, 21))
-        self.assertEqual(cars.getCarOfLocation(15, 15), plate)
+        self.assertEqual(cars.getCarOfLocation(15, 15).label, plate)
 
     def test_move_car_to_occupied_location(self):
         cars = Cars(self.dims)
