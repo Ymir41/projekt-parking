@@ -36,26 +36,54 @@ class Cars(TrackableCollection):
         :return Cars: copy of itself
         """
         out = Cars(self.__dimensions)
-        out.__locations = self.__locations.copy()
-        out.__cars = self.__cars.copy()
+        # Recreate each Car with a new Box object based on the original Box's points
+        out.__cars = [Car(car.label, Box(car.getBox().p[0][0], car.getBox().p[0][1],
+                                         car.getBox().p[1][0], car.getBox().p[1][1],
+                                         car.getBox().p[2][0], car.getBox().p[2][1],
+                                         car.getBox().p[3][0], car.getBox().p[3][1])) for car in self.__cars]
+        # Rebuild the locations array based on the new Boxes
+        out.__locations = np.full(self.__dimensions, -1, dtype=int)
+        for i, car in enumerate(out.__cars):
+            box = car.getBox()
+            mask = box.getMask(self.__dimensions)
+            out.__locations[mask] = i
         return out
 
     def getDimensions(self):
         return self.__dimensions
 
-    def getCarOfLocation(self, x:int, y:int):
-        if self.__locations[y, x] == -1:
+    def getCarOfLocation(self, x: int, y: int):
+        # Sprawdź, czy x i y są w zakresie wymiarów tablicy
+        if x >= 0 and y >= 0 and y < self.__dimensions[0] and x < self.__dimensions[1]:
+            if self.__locations[y, x] == -1:
+                return None
+            return self.__cars[self.__locations[y, x]]
+        else:
             return None
-        return self.__cars[self.__locations[y, x]]
 
-    def updateCarsPositions(self, cars: Self) -> None:
+    def updateCarsPositions(self, new_cars: 'Cars') -> None:
         """
-        Updates positions and boxes of cars it holds based to the new positions found in cars.
-        When they have the same plate number then it is used to determine which cars are the same.
-        Uses proximity of locations and boxes when plate number not given.
-        :param cars: A Cars object with cars with new locations and boxes.
+        Updates positions and boxes of cars it holds based on the new positions found in new_cars,
+        matching them by index order.
+        :param new_cars: A Cars object with cars with new locations and boxes.
         """
-        pass
+        # Iterate through the new cars and update positions
+        for i, new_car in enumerate(new_cars):
+            if i < len(self.__cars):
+                # Update existing car's box if the index is within current car list
+                self.__cars[i].move(new_car.getBox())
+            else:
+                # Append new car if the index exceeds current car list
+                self.append(new_car)
+
+    def __updateLocations(self, car: 'Car') -> None:
+        """
+        Updates the location grid for a specific car.
+        :param car: The car that has been moved and needs its grid location updated.
+        """
+        index = self.__cars.index(car)
+        new_mask = car.getBox().getMask(self.__dimensions)
+        self.__locations[new_mask] = index
 
     def getIndexFromPlate(self, plate: str) -> int:
         """
@@ -67,7 +95,24 @@ class Cars(TrackableCollection):
 
     def moveCar(self, index: int, new_box: tuple[int, int, int, int]) -> None:
         """Allows to move car to the new location"""
-        pass
+        if index >= len(self.__cars) or index < 0:
+            raise IndexError("Index out of range")
+
+        car = self.__cars[index]
+        old_box = car.getBox()
+
+        # Clear the old location in the __locations array
+        old_mask = old_box.getMask(self.__dimensions)
+        self.__locations[old_mask] = -1
+
+        # Check if the new location is available
+        new_mask = new_box.getMask(self.__dimensions)
+        if np.any(self.__locations[new_mask] != -1):
+            raise ValueError("New location is already occupied")
+
+        # Move the car to the new location
+        car.box = new_box
+        self.__locations[new_mask] = index
 
     def moveCarByPlate(self, plate: str, new_location: tuple[2], new_box: tuple[4]) -> bool:
         """Allows to move car of given plate to the new location"""
