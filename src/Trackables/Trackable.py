@@ -17,6 +17,8 @@ class Trackable(object):
 
     def getLocation(self):
         return self.getBox().middle()
+    def getLabel(self):
+        return self.label
 
     def __eq__(self, other: Self):
         if not isinstance(other, Trackable):
