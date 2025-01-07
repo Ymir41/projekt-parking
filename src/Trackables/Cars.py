@@ -37,16 +37,10 @@ class Cars(TrackableCollection):
         """
         out = Cars(self.__dimensions)
         # Recreate each Car with a new Box object based on the original Box's points
-        out.__cars = [Car(car.label, Box(car.getBox().p[0][0], car.getBox().p[0][1],
-                                         car.getBox().p[1][0], car.getBox().p[1][1],
-                                         car.getBox().p[2][0], car.getBox().p[2][1],
-                                         car.getBox().p[3][0], car.getBox().p[3][1])) for car in self.__cars]
+        out.__cars = [car.copy() for car in self.__cars]
         # Rebuild the locations array based on the new Boxes
-        out.__locations = np.full(self.__dimensions, -1, dtype=int)
-        for i, car in enumerate(out.__cars):
-            box = car.getBox()
-            mask = box.getMask(self.__dimensions)
-            out.__locations[mask] = i
+        out.__locations = self.__locations.copy()
+
         return out
 
     def getDimensions(self):

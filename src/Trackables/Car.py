@@ -19,8 +19,8 @@ class Car(Trackable):
         """Accessor method for the car's plate number."""
         return self.getLabel()
 
-    def __copy__(self):
-        out = self.__class__(self.label, self.getBox())
+    def copy(self):
+        out = self.__class__(self.getPlate(), self.getBox())
         return out
 
     def __str__(self):
