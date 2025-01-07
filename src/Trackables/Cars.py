@@ -93,7 +93,7 @@ class Cars(TrackableCollection):
         """
         return [car.label for car in self.__cars].index(plate)
 
-    def moveCar(self, index: int, new_box: tuple[int, int, int, int]) -> None:
+    def moveCar(self, index: int, new_box: Box) -> None:
         """Allows to move car to the new location"""
         if index >= len(self.__cars) or index < 0:
             raise IndexError("Index out of range")
@@ -114,9 +114,9 @@ class Cars(TrackableCollection):
         car.box = new_box
         self.__locations[new_mask] = index
 
-    def moveCarByPlate(self, plate: str, new_location: tuple[2], new_box: tuple[4]) -> bool:
+    def moveCarByPlate(self, plate: str, new_box: Box) -> bool:
         """Allows to move car of given plate to the new location"""
-        pass
+        self.moveCar(self.getIndexFromPlate(plate), new_box)
 
     def append(self, car: Car) -> None:
         """
