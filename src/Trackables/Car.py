@@ -14,12 +14,10 @@ class Car(Trackable):
         :param box: box around the car (x1, y1, x2, y2) - upper left and bottom right corners
         """
         super().__init__(plate, box)
-        self.box = box
-        self._plate = plate
 
-    def get_plate(self):
+    def getPlate(self):
         """Accessor method for the car's plate number."""
-        return self._plate
+        return self.getLabel()
 
     def __copy__(self):
         out = self.__class__(self.label, self.getBox())
@@ -35,10 +33,6 @@ class Car(Trackable):
     def move(self,  new_box: Box) -> None:
         """
         Moves the object around the image.
-        :param new_location: the new location of the Trackable (x, y)
-        :param new_box: the new box around the trackable (x1, y1, x2, y2)
+        :param new_box: the new box around the trackable
         """
         self.box = new_box
-
-    def getBox(self):
-        return self.box
