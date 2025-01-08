@@ -15,8 +15,12 @@ class Trackable(object):
     def getBox(self):
         return self.__box
 
+    def setBox(self, new_box: Box):
+        self.__box = new_box
+
     def getLocation(self):
         return self.getBox().middle()
+
     def getLabel(self):
         return self.label
 

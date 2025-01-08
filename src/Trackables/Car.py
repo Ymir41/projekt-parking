@@ -19,7 +19,7 @@ class Car(Trackable):
         """Accessor method for the car's plate number."""
         return self.getLabel()
 
-    def copy(self):
+    def copy_(self):
         out = self.__class__(self.getPlate(), self.getBox())
         return out
 
@@ -35,4 +35,4 @@ class Car(Trackable):
         Moves the object around the image.
         :param new_box: the new box around the trackable
         """
-        self.box = new_box
+        self.setBox(new_box)

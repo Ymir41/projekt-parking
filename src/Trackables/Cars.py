@@ -1,4 +1,6 @@
 import numpy as np
+from exceptiongroup import catch
+
 from src.Trackables.Car import Car, Box
 from src.Trackables.TrackableCollection import TrackableCollection
 from typing_extensions import Self
@@ -37,7 +39,7 @@ class Cars(TrackableCollection):
         """
         out = Cars(self.__dimensions)
         # Recreate each Car with a new Box object based on the original Box's points
-        out.__cars = [car.copy() for car in self.__cars]
+        out.__cars = [car.copy_() for car in self.__cars]
         # Rebuild the locations array based on the new Boxes
         out.__locations = self.__locations.copy()
 
@@ -61,14 +63,50 @@ class Cars(TrackableCollection):
         matching them by index order.
         :param new_cars: A Cars object with cars with new locations and boxes.
         """
+        unlabeled_cars = []
+        unlabeled_cars_number_of_matches = {}
+        plates = [car.getPlate() for car in self.__cars]
+        plates = plates.copy()
+        cars = self.__cars.copy()
+        unmoved = dict(zip(plates, cars))
         # Iterate through the new cars and update positions
         for i, new_car in enumerate(new_cars):
-            if i < len(self.__cars):
-                # Update existing car's box if the index is within current car list
-                self.__cars[i].move(new_car.getBox())
-            else:
-                # Append new car if the index exceeds current car list
+            plate = new_car.getPlate()
+            if plate is None:
+                unlabeled_cars.append(new_car)
+                continue
+            if plate not in plates:
                 self.append(new_car)
+                continue
+            index = self.getIndexFromPlate(plate)
+            # Update existing car's box if the index is within current car list
+            self.__cars[index].move(new_car.getBox())
+            del unmoved[plate]
+
+        for new_car in unlabeled_cars:
+            potential_old_cars = list(filter(lambda car: car.getBox().withinRange(new_car.getBox()), unmoved.values()))
+            unlabeled_cars_number_of_matches[new_car.getBox()] = len(potential_old_cars)
+
+        unlabeled_cars.sort(key=lambda car: unlabeled_cars_number_of_matches[car.getBox()])
+
+        for new_car in unlabeled_cars:
+            potential_old_cars = list(filter(lambda car: car.getBox().withinRange(new_car.getBox()), unmoved.values()))
+            if len(potential_old_cars) == 0:
+                continue
+            old_car = min(potential_old_cars, key= lambda car: car.getBox().distance(new_car.getBox()))
+            old_car.move(new_car.getBox())
+            del unmoved[old_car.getPlate()]
+
+        for plate, old_car in unmoved.items():
+            self.removeByPlate(plate)
+
+        self.callculateLocations()
+
+    def callculateLocations(self):
+        self.__locations = np.zeros(self.__dimensions)*(-1)
+        for i, car in enumerate(self.__cars):
+            self.__locations[car.getBox().getMask(self.__dimensions)] = i
+
 
     def __updateLocations(self, car: 'Car') -> None:
         """
@@ -105,7 +143,7 @@ class Cars(TrackableCollection):
             raise ValueError("New location is already occupied")
 
         # Move the car to the new location
-        car.box = new_box
+        car.setBox(new_box)
         self.__locations[new_mask] = index
 
     def moveCarByPlate(self, plate: str, new_box: Box) -> bool:
@@ -147,6 +185,4 @@ class Cars(TrackableCollection):
         self.__remove(self.getIndexFromPlate(plate))
 
     def getPlateFromIndex(self, index: int) -> str:
-        return self.__cars[index].label
-
-
+        return self.__cars[index].getPlate()

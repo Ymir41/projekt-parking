@@ -1,5 +1,11 @@
+import math
+
 import numpy as np
 from typing_extensions import Self
+
+
+def distance_(a, b):
+    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
 class Box(object):
     """
@@ -97,6 +103,9 @@ class Box(object):
         out = Box(*self.p)
         return out
 
+    def __hash__(self):
+        return hash((self.p[0], self.p[1], self.p[2], self.p[3]))
+
     def middle(self) -> tuple[float, float]:
         """
         returns middle point of the box
@@ -106,6 +115,16 @@ class Box(object):
         x = sum(val[0])//4
         y = sum(val[1])//4
         return x, y
+
+
+    def distance(self, other):
+        location_self = self.middle()
+        location_other = other.middle()
+        return distance_(location_self, location_other)
+
+    def withinRange(self, other) -> bool:
+        range_ = max(distance_(self.p[0], self.p[3]), distance_(self.p[1], self.p[2])) * 1.2
+        return self.distance(other) < range_
 
     def inside(self, point: tuple[int, int]) -> bool:
         """
