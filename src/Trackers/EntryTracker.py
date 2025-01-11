@@ -7,13 +7,18 @@ from src.Signal import Signal
 
 
 class EntryTracker:
+    """
+    A class used to track the entrance of the parking lot.
+    """
     def __init__(self, addCarEntry, isCarAllowed, carAllowedToEnter: Signal, readyToCloseEntryGate: Signal):
         """
         Initializes the EntryTracker.
-        Args:
-            isCarAllowed - function that returns True if car is allowed to enter and False otherwise
-            carAllowedToEnter - Signal that will be emmited when car that may enter is detected
-            readyToCloseEntryGate - Signal that tells that the gate can be closed
+
+        :param addCarEntry: a function used to add a car to the parking.
+        :param isCarAllowed: a function used to determine whether car of given plate number is allowed in.
+        :param carAllowedToEnter: a Signal emitted when the car is allowed to enter.
+        :param readyToCloseEntryGate: a Signal emitted when the gate is ready to close.
+
         """
         self.addCarEntry = addCarEntry
         self.isCarAllowed = isCarAllowed
@@ -27,11 +32,11 @@ class EntryTracker:
 
     def verifyCar(self, image: np.ndarray):
         """
-        Verifies the car in the given image.
-        Args:
-            image:  The image to process.
+        Verify if the car is allowed to enter.
 
-        Returns: True if the car is verified, False otherwise.
+        :param image: The frame to process.
+
+        :return: True if the car is allowed to enter, False otherwise.
 
         """
         LicensePlateReader = PlateReader.LicensePlateReader(self.isCarAllowed)
@@ -41,67 +46,48 @@ class EntryTracker:
             return True
         return False
 
-    def track(self, video: str) -> bool:
+    def process_frame(self, frame: np.ndarray):
         """
-        Tracks the entrance of a car in the given video.
-        Args:
-            video: The path to the video file.
+        Process the frame and check if the car is allowed to enter.
 
-        Returns: True if the tracking was successful, False otherwise.
+        :param frame: The frame to process.
 
+        :return: The frame with the car position box drawn if the car is detected.
         """
-        cap = cv2.VideoCapture(video)
+        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        height = frame.shape[0]
+        width = frame.shape[1]
+        frame = frame[int(height / 1.2):height, int(width / 1.9):width - 960]
+        frame = cv2.rotate(frame, cv2.ROTATE_180)
 
-        if not cap.isOpened():
-            print("Error: Unable to open video.")
-            return False
+        if self.first_frame is None:
+            self.first_frame = frame
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+        if self.gateOpened:
+            self.getCarPositionBox(frame)
+            if self.car_position_box is None and self.gateOpened:
+                print("car passed the gate.")
+                self.closeGate()
+                return frame
+            else:
+                cv2.rectangle(frame, (self.car_position_box[0], self.car_position_box[1]),
+                              (self.car_position_box[0] + self.car_position_box[2],
+                               self.car_position_box[1] + self.car_position_box[3]), (0, 255, 0), 2)
+                return frame
 
-            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        if self.verifyCar(frame):
+            if not self.gateOpened:
+                print("Car detected.")
+                self.openGate()
 
-            height = frame.shape[0]
-            width = frame.shape[1]
-
-            frame = frame[int(height / 1.2):height, int(width / 1.9):width - 960]
-
-            frame = cv2.rotate(frame, cv2.ROTATE_180)
-
-            if self.first_frame is None:
-                self.first_frame = frame
-
-            if self.gateOpened:
-                self.getCarPositionBox(frame)
-                if self.car_position_box is None and self.gateOpened:
-                    print("car passed the gate.")
-                    self.closeGate()
-                    continue
-
-            if self.verifyCar(frame):
-                if not self.gateOpened:
-                    print("Car detected.")
-                    self.openGate(self.plate_number)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
-        print("Tracking finished.")
-        self.closeGate()
-
-        return True
+        return frame
 
     def getCarPositionBox(self, image: np.ndarray):
         """
-        Gets the position of a car in the given image.
-        Args:
-            image: The image to process.
+        Get the position of the car in the frame.
+        :param image: The frame to process.
 
-        Returns: None
+        :return: The frame with the car position box drawn if the car is detected.
         """
         background = cv2.cvtColor(self.first_frame, cv2.COLOR_BGR2GRAY)
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -151,8 +137,6 @@ class EntryTracker:
             self.car_position_box = (x, y, w, h)
             self.recordCarPosition(x, y, w, h)
 
-            output = image.copy()
-            cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
         else:
             self.car_positions = []
             self.plate_number = None
@@ -160,14 +144,7 @@ class EntryTracker:
 
     def recordCarPosition(self, x, y, w, h):
         """
-        Records the position of a car.
-        Args:
-            x: The x-coordinate of the top-left corner of the car bounding box.
-            y: The y-coordinate of the top-left corner of the car bounding box.
-            w: The width of the car bounding box.
-            h: The height of the car bounding box.
-
-        Returns: None
+        Record the position of the car.
         """
         position = {"X": x, "Y": y, "Width": w, "Height": h}
         self.car_positions.append(position)
@@ -175,10 +152,7 @@ class EntryTracker:
 
     def openGate(self):
         """
-        Opens the gate for a car. Adds an entry record to the database.
-
-        Returns: None
-
+        Open the gate for the car to enter.
         """
         self.carAllowedToEnter.emit()
         self.gateOpened = True
@@ -186,9 +160,7 @@ class EntryTracker:
 
     def closeGate(self):
         """
-        Closes the gate.
-
-        Returns: None
+        Close the gate after the car has entered.
         """
         self.readyToCloseEntryGate.emit()
         self.gateOpened = False
