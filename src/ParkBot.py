@@ -1,4 +1,4 @@
-from  Signal import Signal
+from Signal import Signal
 import cv2
 import numpy as np
 from Trackers.CarTracker import CarTracker
@@ -6,6 +6,7 @@ from Trackers.SpotTracker import SpotTracker
 from Trackables.Cars import Cars
 from Trackables.Spots import Spots
 from src.Trackers.EntryTracker import EntryTracker
+from src.Trackers.ExitTracker import ExitTracker
 
 
 class ParkBot(object):
@@ -13,6 +14,7 @@ class ParkBot(object):
     A Class that monitors all relevant changes on the parking
     and announces them through Signals.
     """
+
     def __init__(self, cap: cv2.VideoCapture) -> None:
         """
         :param cap: a cv2.VideoCapture video of parking
@@ -22,24 +24,25 @@ class ParkBot(object):
         self.height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         self.checkCar = None
-        self.carParked = Signal() # plate:str, spot: int
-        self.carUnparked = Signal() # place:str, spot: int
-        self.carAllowedToEnter = Signal() # plate:str
-        self.carAllowedToExit = Signal() # plate:str
-        self.readyToCloseEntryGate = Signal()
-        self.readyToCloseExitGate = Signal()
-        self.carEntered = Signal() # plate:str
-        self.carExited = Signal() # plate:str
-        self.imageRead = Signal() # img:np.ndarray
-        self.imageTracked = Signal() # trackedImg:np.ndarray
+        self.carParked = Signal()  # plate:str, spot: int
+        self.carUnparked = Signal()  # place:str, spot: int
+        self.carAllowedToEnter = Signal()  # plate:str
+        self.carAllowedToExit = Signal()  # plate:str
+        self.readyToCloseEntryGate = Signal()  # plate:str
+        self.readyToCloseExitGate = Signal()  # plate:str
+        self.carEntered = Signal()  # plate:str
+        self.carExited = Signal()  # plate:str
+        self.imageRead = Signal()  # img:np.ndarray
+        self.imageTracked = Signal()  # trackedImg:np.ndarray
 
         self.cars = Cars((self.height, self.width))
         self.spots = Spots()
         self.carTracker = CarTracker(self.cars)
         self.spotTracker = SpotTracker(self.spots)
-        self.entryTracker = EntryTracker(self.checkCar, self.carAllowedToEnter, self.readyToCloseEntryGate,
-                                         self.carEntered)
-        self.parkingState = {} # contains parkingSpot:carPlate
+        self.entryTracker = EntryTracker(self.carEntered, self.checkCar, self.carAllowedToEnter,
+                                         self.readyToCloseEntryGate)
+        self.exitTracker = ExitTracker(self.carExited, self.checkCar, self.carAllowedToExit, self.readyToCloseExitGate)
+        self.parkingState = {}  # contains parkingSpot:carPlate
 
     def setCheckCar(self, func) -> None:
         """
@@ -52,6 +55,6 @@ class ParkBot(object):
     def __call__(self):
         pass
 
-    def parkingDiffSpots(self, oldParkingState, newParkingState)->list:
+    def parkingDiffSpots(self, oldParkingState, newParkingState) -> list:
         ""
         return []
