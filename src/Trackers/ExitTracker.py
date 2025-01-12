@@ -12,17 +12,17 @@ class ExitTracker:
     A class used to track the exit of the parking lot.
     """
 
-    def __init__(self, addCarExit, isCarAllowed, carAllowedToExit: Signal, readyToCloseExitGate: Signal):
+    def __init__(self, carExited: Signal, isCarAllowed, carAllowedToExit: Signal, readyToCloseExitGate: Signal):
         """
         Initializes the ExitTracker.
 
-        :param addCarExit: a function used to remove a car from the parking.
+        :param carExited: a Signal used to remove a car from the parking.
         :param isCarAllowed: a function used to determine whether car of given plate number is allowed in.
         :param carAllowedToExit: a Signal emitted when the car is allowed to exit.
         :param readyToCloseExitGate: a Signal emitted when the gate is ready to close.
 
         """
-        self.addCarExit = addCarExit
+        self.carExited = carExited
         self.isCarAllowed = isCarAllowed
         self.readyToCloseExitGate = readyToCloseExitGate
         self.carAllowedToExit = carAllowedToExit
@@ -164,7 +164,7 @@ class ExitTracker:
         """
         self.carAllowedToExit.emit()
         self.gateOpened = True
-        self.addCarExit(self.plate_number)
+        self.carExited.emit(self.plate_number)
 
     def closeGate(self):
         """
