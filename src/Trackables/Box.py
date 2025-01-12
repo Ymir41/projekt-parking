@@ -7,10 +7,12 @@ from typing_extensions import Self
 def distance_(a, b):
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
+
 class Box(object):
     """
     It's a box with corners upper left, upper right, down left, down right
     """
+
     def __init__(self, x1, y1, x2, y2, x3, y3, x4, y4):
         def are_points_collinear(p1, p2, p3):
             x1, y1 = p1
@@ -29,7 +31,9 @@ class Box(object):
         p3 = (x3, y3)
         p4 = (x4, y4)
 
-        if are_points_collinear(p1, p2, p3) or are_points_collinear(p2, p4, p3) or are_points_collinear(p1, p2, p4) or are_points_collinear(p1, p3, p4):
+        if are_points_collinear(p1, p2, p3) or are_points_collinear(p2, p4, p3) or are_points_collinear(p1, p2,
+                                                                                                        p4) or are_points_collinear(
+                p1, p3, p4):
             raise ValueError("3 or 4 points are collinear")
 
         p_all = [p1, p2, p3, p4]
@@ -45,7 +49,7 @@ class Box(object):
         self.p.append(p)
         p_upper.remove(p)
         self.p.append(p_upper[0])
-        p = min(p_down,  key=lambda p: p[0])
+        p = min(p_down, key=lambda p: p[0])
         self.p.append(p)
         p_down.remove(p)
         self.p.append(p_down[0])
@@ -65,7 +69,7 @@ class Box(object):
         return out
 
     @classmethod
-    def almostEquel(cls, box1: Self, box2: Self, tolerance: float) -> bool:
+    def almostEqual(cls, box1: Self, box2: Self, tolerance: float) -> bool:
         """
         Check if two boxes match within a given tolerance.
         :param box1: Box
@@ -75,18 +79,19 @@ class Box(object):
         """
         sy = [0, 0]
         sy[0] = box1.p[0][1] - box1.p[2][1]
-        sy[1]= box1.p[1][1] - box1.p[3][1]
+        sy[1] = box1.p[1][1] - box1.p[3][1]
 
         sx = [0, 0]
         sx[0] = box1.p[0][0] - box1.p[1][0]
-        sx[1]= box1.p[2][0] - box1.p[3][0]
+        sx[1] = box1.p[2][0] - box1.p[3][0]
 
         for i, (p1, p2) in enumerate(zip(box1.p, box2.p)):
-            sy_ = sy[i%2]
-            sx_ = sx[int(i>2)]
+            sy_ = sy[i % 2]
+            sx_ = sx[int(i > 2)]
             error_margin_x = abs(sx_ * tolerance)
             error_margin_y = abs(sy_ * tolerance)
-            if not ((p1[0] - error_margin_x <= p2[0] <= p1[0]+error_margin_x) and (p1[1] - error_margin_y <= p2[1] <= p1[1]+error_margin_y)):
+            if not ((p1[0] - error_margin_x <= p2[0] <= p1[0] + error_margin_x) and (
+                    p1[1] - error_margin_y <= p2[1] <= p1[1] + error_margin_y)):
                 return False
         return True
 
@@ -94,7 +99,7 @@ class Box(object):
         return self.p == other.p
 
     def __str__(self):
-        return f"Box({', '.join(map(lambda p: str(p).replace('(','' ).replace(')', ''), self.p))})"
+        return f"Box({', '.join(map(lambda p: str(p).replace('(', '').replace(')', ''), self.p))})"
 
     def __repr__(self):
         return self.__str__()
@@ -112,10 +117,9 @@ class Box(object):
         :return tuple[float, float]: (x, y) the middle
         """
         val = list(zip(*self.p))
-        x = sum(val[0])//4
-        y = sum(val[1])//4
+        x = sum(val[0]) // 4
+        y = sum(val[1]) // 4
         return x, y
-
 
     def distance(self, other):
         location_self = self.middle()
@@ -147,16 +151,14 @@ class Box(object):
 
         a, b, c, d = self.p
         px, py = point
-        AB = y_line_function(a,b)
-        BD = x_line_function(b,d)
-        DC = y_line_function(d,c)
-        CA = x_line_function(c,a)
-        return py>=AB(px) and py<=DC(px) and px>=CA(py) and px<=BD(py)
-
+        AB = y_line_function(a, b)
+        BD = x_line_function(b, d)
+        DC = y_line_function(d, c)
+        CA = x_line_function(c, a)
+        return py >= AB(px) and py <= DC(px) and px >= CA(py) and px <= BD(py)
 
     def getMask(self, shape: tuple[int, int]) -> np.ndarray:
         def triangle_mask(X, Y, p1, p2, p3):
-
             def area(px, py, qx, qy, rx, ry):
                 return abs((px - rx) * (qy - ry) - (qx - rx) * (py - ry))
 
@@ -171,7 +173,6 @@ class Box(object):
 
             return np.isclose(area1 + area2 + area3, total_area)
 
-
         def quadrilateral_mask(p1, p2, p3, p4, grid_shape):
             Y, X = np.ogrid[:grid_shape[0], :grid_shape[1]]
 
@@ -182,10 +183,8 @@ class Box(object):
             # Combine the masks
             return mask_triangle1 | mask_triangle2
 
-
         # Example Usage
 
         mask = quadrilateral_mask(*self.p, grid_shape=shape)
 
         return mask
-
