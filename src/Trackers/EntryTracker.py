@@ -10,17 +10,18 @@ class EntryTracker:
     """
     A class used to track the entrance of the parking lot.
     """
-    def __init__(self, addCarEntry, isCarAllowed, carAllowedToEnter: Signal, readyToCloseEntryGate: Signal):
+
+    def __init__(self, carEntered: Signal, isCarAllowed, carAllowedToEnter: Signal, readyToCloseEntryGate: Signal):
         """
         Initializes the EntryTracker.
 
-        :param addCarEntry: a function used to add a car to the parking.
+        :param carEntered: a function emitted when the car enters the parking.
         :param isCarAllowed: a function used to determine whether car of given plate number is allowed in.
         :param carAllowedToEnter: a Signal emitted when the car is allowed to enter.
         :param readyToCloseEntryGate: a Signal emitted when the gate is ready to close.
 
         """
-        self.addCarEntry = addCarEntry
+        self.carEntered = carEntered
         self.isCarAllowed = isCarAllowed
         self.carAllowedToEnter = carAllowedToEnter
         self.readyToCloseEntryGate = readyToCloseEntryGate
@@ -156,7 +157,7 @@ class EntryTracker:
         """
         self.carAllowedToEnter.emit()
         self.gateOpened = True
-        self.addCarEntry(self.plate_number)
+        self.carEntered.emit(self.plate_number)
 
     def closeGate(self):
         """
@@ -164,4 +165,4 @@ class EntryTracker:
         """
         self.readyToCloseEntryGate.emit()
         self.gateOpened = False
-        print("Gate closed.")
+        print("Gate closed")
