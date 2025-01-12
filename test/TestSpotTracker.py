@@ -57,7 +57,7 @@ class TestSpotTracker(unittest.TestCase):
                 actual_box = spot.getBox()
                 tolerance = 5 # in %
                 self.assertTrue(
-                    Box.almostEquel(expected_box, actual_box, tolerance=(tolerance/100)),
+                    Box.almostEqual(expected_box, actual_box, tolerance=(tolerance / 100)),
                     f"Box mismatch for spot {number} in image: {img_file}. "
                     f"Expected: {expected_box} +/- {tolerance}%, Actual: {actual_box}"
                 )

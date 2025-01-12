@@ -1,4 +1,5 @@
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import skimage.filters as filters
 
@@ -7,16 +8,22 @@ from src.Signal import Signal
 
 
 class ExitTracker:
-    def __init__(self, isCarPresent, isCarAllowed, carAllowedToExit: Signal, readyToCloseExitGate: Signal):
+    """
+    A class used to track the exit of the parking lot.
+    """
+
+    def __init__(self, carExited: Signal, isCarAllowed, carAllowedToExit: Signal, readyToCloseExitGate: Signal):
         """
         Initializes the ExitTracker.
-        Args:
-            isCarAllowed - function that returns True if car is allowed to enter and False otherwise
-            carAllowedToExit - Signal that will be emmited when car that may exit is detected
-            readyToCloseExitGate - Signal that tells that the gate can be closed
+
+        :param carExited: a Signal used to remove a car from the parking.
+        :param isCarAllowed: a function used to determine whether car of given plate number is allowed in.
+        :param carAllowedToExit: a Signal emitted when the car is allowed to exit.
+        :param readyToCloseExitGate: a Signal emitted when the gate is ready to close.
+
         """
+        self.carExited = carExited
         self.isCarAllowed = isCarAllowed
-        self.isCarPresent = isCarPresent
         self.readyToCloseExitGate = readyToCloseExitGate
         self.carAllowedToExit = carAllowedToExit
         self.gateOpened = False
@@ -27,12 +34,11 @@ class ExitTracker:
 
     def verifyCar(self, image: np.ndarray):
         """
-        Verifies the car in the given image.
-        Args:
-            image:  The image to process.
+        Verify if the car is allowed to exit.
 
-        Returns: True if the car is verified, False otherwise.
+        :param image: The frame to process.
 
+        :return: True if the car is allowed to exit, False otherwise.
         """
         LicensePlateReader = PlateReader.LicensePlateReader(self.isCarAllowed)
         plate_number = LicensePlateReader.read_plate(image)
@@ -41,66 +47,48 @@ class ExitTracker:
             return True
         return False
 
-    def track(self, video: str) -> bool:
+    def process_frame(self, frame: np.ndarray):
         """
-        Tracks the entrance of a car in the given video.
-        Args:
-            video: The path to the video file.
+        Processes the frame and checks if the car is allowed to exit.
 
-        Returns: True if the tracking was successful, False otherwise.
+        :param frame: The frame to process.
 
+        :return: The frame with the car position box drawn if the car is detected.
         """
-        cap = cv2.VideoCapture(video)
+        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        height = frame.shape[0]
+        width = frame.shape[1]
+        frame = frame[int(height / 1.4):int(height / 1.1), 1100: int(width / 2.2)]
 
-        if not cap.isOpened():
-            print("Error: Unable to open video.")
-            return False
+        if self.first_frame is None:
+            self.first_frame = frame
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+        if self.gateOpened:
+            self.getCarPositionBox(frame)
 
-            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
-            height = frame.shape[0]
-            width = frame.shape[1]
-
-            frame = frame[int(height / 1.3):int(height / 1.1), 1200: int(width / 2.2)]
-
-            cv2.imshow("Frame", frame)
-            if self.first_frame is None:
-                self.first_frame = frame
-
-            if self.gateOpened:
-                self.getCarPositionBox(frame)
-                if self.car_position_box is None and self.gateOpened:
-                    print("car passed the gate.")
-                    self.closeGate()
-                    continue
-
+            if self.car_position_box is None and self.gateOpened:
+                print("car passed the gate.")
+                self.closeGate()
+            else:
+                cv2.rectangle(frame, (self.car_position_box[0], self.car_position_box[1]),
+                              (self.car_position_box[0] + self.car_position_box[2],
+                               self.car_position_box[1] + self.car_position_box[3]), (0, 255, 0), 2)
+                return frame
+        else:
             if self.verifyCar(frame):
                 if not self.gateOpened:
                     print("Car detected.")
-                    self.openGate(self.plate_number)
+                    self.openGate()
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()
-        print("Tracking finished.")
-        self.closeGate()
-
-        return True
+        return frame
 
     def getCarPositionBox(self, image: np.ndarray):
         """
-        Gets the position of a car in the given image.
-        Args:
-            image: The image to process.
+        Get the position of the car in the parking lot.
 
-        Returns: None
+        :param image: The frame to process.
+
+
         """
         background = cv2.cvtColor(self.first_frame, cv2.COLOR_BGR2GRAY)
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -111,19 +99,21 @@ class ExitTracker:
 
         blurred = diff
 
-        thresh = filters.threshold_li(blurred)
+        thresh = filters.threshold_triangle(blurred)
         binary = blurred < thresh
         binary = np.invert(binary)
         binary = np.uint8(binary * 255)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (40, 40))
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 40))
         morph = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+
         morph = cv2.copyMakeBorder(morph, 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         edges = cv2.Canny(morph, 30, 100)
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
 
-        min_area = 7500
+        min_area = 15000
         car_contour = None
         last_position = self.car_positions[-1] if self.car_positions else None
         min_distance = float('inf')
@@ -149,9 +139,6 @@ class ExitTracker:
             x, y, w, h = cv2.boundingRect(car_contour)
             self.car_position_box = (x, y, w, h)
             self.recordCarPosition(x, y, w, h)
-
-            output = image.copy()
-            cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
         else:
             self.car_positions = []
             self.plate_number = None
@@ -159,37 +146,30 @@ class ExitTracker:
 
     def recordCarPosition(self, x, y, w, h):
         """
-        Records the position of a car.
-        Args:
-            x: The x-coordinate of the top-left corner of the car bounding box.
-            y: The y-coordinate of the top-left corner of the car bounding box.
-            w: The width of the car bounding box.
-            h: The height of the car bounding box.
+        Records the position of the car in the parking lot.
 
-        Returns: None
+        :param x: The x coordinate of the car.
+        :param y: The y coordinate of the car.
+        :param w: The width of the car.
+        :param h: The height of the
+
         """
         position = {"X": x, "Y": y, "Width": w, "Height": h}
         self.car_positions.append(position)
         print(f"Recorded car position: {position}")
 
-    def openGate(self, car_plate_id: int):
+    def openGate(self):
         """
-        Opens the gate for a car. Adds an entry record to the database.
-        Args:
-            car_plate_id: The ID of the car plate.
-
-        Returns: None
-
+        Opens the exit gate.
         """
         self.carAllowedToExit.emit()
         self.gateOpened = True
+        self.carExited.emit(self.plate_number)
 
     def closeGate(self):
         """
-        Closes the gate.
-
-        Returns: None
+        Closes the exit gate.
         """
         self.readyToCloseExitGate.emit()
         self.gateOpened = False
-        print("Gate closed.")
+        print("Gate closed")
