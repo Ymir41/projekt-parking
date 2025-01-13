@@ -10,11 +10,17 @@ def draw_boxes_from_cars(frame: np.ndarray, cars: list) -> np.ndarray:
     """
     i = 0
     for car in cars:
+        license_plate = car.getPlate()
         box = car.getBox()
 
         cv2.rectangle(frame, box.p[0], box.p[3], (0, 255, 0), 7)
-        label = f"{i}: {box.p}"
-        cv2.putText(frame, label, box.p[0], cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 7)
+        text_position = (box.p[0][0], max(box.p[0][1] - 15, 15))
+        text_label = license_plate
+        print("License plate: ", license_plate)
+        cv2.putText(
+            frame, text_label, text_position,
+            cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 7, cv2.LINE_AA
+        )
         i += 1
 
     return frame
@@ -86,11 +92,11 @@ class VideoViewer(object):
 
             frame = frame[0:frame.shape[0], 300:frame.shape[1]]
 
-            # cars = carTracker.locateCars(frame)
+            # cars = carTracker.locateCars(frame, entryTracker.getPlateNumber())
 
-            boxes = carTracker.locateCarBoxes(frame)
+            boxes = carTracker.locateCarBoxes(frame, entryTracker.getPlateNumber())
 
-            frame = draw_boxes(frame, boxes)
+            frame = draw_boxes_from_cars(frame, boxes)
 
             frame = cv2.resize(frame, (1200, 1600))
             self.displayFrame(frame)

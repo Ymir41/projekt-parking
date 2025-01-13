@@ -1,11 +1,13 @@
 import os
 
+import cv2
 import numpy as np
 from dotenv import load_dotenv
 from inference_sdk import InferenceHTTPClient
 
 from src.Trackables.Cars import Cars, Car, Box
 from src.Trackers.Tracker import Tracker
+import src.Readers.LicensePlateReader as PlateReader
 
 load_dotenv()
 
@@ -19,11 +21,14 @@ class CarTracker(Tracker):
         """
         :param cars: Cars object that holds the cars on the parking with their positions and boxes around them.
         """
+        self.plate_number = None
         self.cars = cars
         self.CLIENT = InferenceHTTPClient(
             api_url="https://detect.roboflow.com",
             api_key=os.getenv("API_KEY")
         )
+        self.license_plates = []
+        self.license_plates_dict = {}
 
     def track(self, img: np.ndarray) -> None:
         """
@@ -32,7 +37,7 @@ class CarTracker(Tracker):
         """
         pass
 
-    def locateCarBoxes(self, img: np.ndarray) -> list[Box]:
+    def locateCarBoxes(self, img: np.ndarray, license_plate: str) -> Cars:
         """
         Locates cars on an image of parking and returns their boxes.
         :param img: the image with cars to locate
@@ -50,9 +55,10 @@ class CarTracker(Tracker):
                 "class"] == "car"
         ]
 
-        boxes = []
+        # boxes = []
+        cars = Cars(dimensions=(img.shape[0], img.shape[1]))
 
-        for car in predicted_cars:
+        for i, car in enumerate(predicted_cars):
             x = int(car["x"])
             y = int(car["y"])
             width = int(car["width"])
@@ -67,15 +73,77 @@ class CarTracker(Tracker):
             x4 = x + width // 2
             y4 = y - height // 2
 
-            boxes.append(Box(x1, y1, x2, y2, x3, y3, x4, y4))
+            # if car.getBox().withinRange(box) or car.getBox().distance(box) <= car.getBox().distance(box) * tolerance:
 
-        return boxes
+            if license_plate is not None:
+                # self.license_plates.append(license_plate)
+                self.license_plates.insert(0, license_plate)
+                self.license_plates = list(dict.fromkeys(self.license_plates))
+                # self.license_plates_dict[self.license_plates[0]] = Box(x1, y1, x2, y2, x3, y3, x4, y4)
 
-    def locateCars(self, img: np.ndarray) -> Cars:
+
+            # If this is the last car, append with the license plate, otherwise append with None
+            # if i == len(predicted_cars) - 1:
+            cars.append(Car(self.license_plates[i], Box(x1, y1, x2, y2, x3, y3, x4, y4)))
+            # else:
+            #     cars.append(Car(None, Box(x1, y1, x2, y2, x3, y3, x4, y4)))
+
+        # return boxes
+        return cars
+
+    def locateCars(self, img: np.ndarray, license_plate: str, tolerance: float = 3.0) -> Cars:
         """
-        It locates cars on an image of parking and returns them with their positions and boxes.
-        Cars returned do not have plate numbers.
-        :param img: the image with cars to locate
-        :return: Cars - a collection of cars found in the image.
+        Locates cars on an image of the parking, draws bounding boxes with license plates
+        only for newly added cars, and returns a collection of Car objects.
+
+        :param img: The image of the parking lot with cars to locate.
+        :param license_plate: License plate for the detected car.
+        :param tolerance: Tolerance factor for determining whether a car is close enough to an existing one.
+        :return: Cars - a collection of Car objects found in the image.
         """
-        pass
+        # Find bounding boxes around cars using locateCarBoxes
+        boxes = self.locateCarBoxes(img)
+        detected_cars = Cars(dimensions=(img.shape[0], img.shape[1]))
+        last_added_car = None  # Track the last newly added car
+
+        print(len(boxes))
+
+        # for box in boxes:
+        #     # Check if the detected box matches an existing car
+        #     existing_car = None
+        #     for car in self.cars:
+        #         # Match based on license plate or proximity
+        #         if car.getPlate() == license_plate:
+        #             existing_car = car
+        #             break
+        #         if car.getBox().withinRange(box) or car.getBox().distance(box) <= car.getBox().distance(
+        #                 box) * tolerance:
+        #             existing_car = car
+        #             break
+        #
+        #     if existing_car:
+        #         # Update the box of the existing car
+        #         existing_car.move(box)
+        #         print(f"Updated car: {existing_car}")
+        #     else:
+        #         # Add a new car
+        #         new_car = Car(plate=license_plate if license_plate else None, box=box)
+        #         detected_cars.append(new_car)
+        #         last_added_car = new_car  # Mark this car as the last added
+        #         print(f"New car added: {new_car}")
+        #
+        #     # Draw the box and display the license plate only for the last added car
+        #     cv2.rectangle(img, box.p[0], box.p[3], (0, 255, 0), 7)
+        #     if last_added_car and last_added_car.getBox() == box:
+        #         # Display the license plate only for the last added car
+        #         text_position = (box.p[0][0], max(box.p[0][1] - 15, 15))
+        #         text_label = license_plate
+        #         cv2.putText(
+        #             img, text_label, text_position,
+        #             cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 7, cv2.LINE_AA
+        #         )
+        #
+        # # Update the collection of cars
+        # self.cars.updateCarsPositions(detected_cars)
+        #
+        # return self.cars
