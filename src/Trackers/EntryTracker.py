@@ -166,3 +166,6 @@ class EntryTracker:
         self.readyToCloseEntryGate.emit()
         self.gateOpened = False
         print("Gate closed")
+
+    def getPlateNumber(self):
+        return self.plate_number
