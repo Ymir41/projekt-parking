@@ -8,8 +8,7 @@ from DataBaseController import DataBaseController
 from Trackers.EntryTracker import EntryTracker
 from Trackers.ExitTracker import ExitTracker
 from Trackers.CarTracker import CarTracker
-from threading import Thread, Event
-from VideoViewer import VideoViewer
+from Readers.LicensePlateReader import LicensePlateReader
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
@@ -26,8 +25,8 @@ if __name__ == "__main__":
     cam = cv2.VideoCapture(str(path))
 
     if not cam.isOpened():
-        print("Error: Could not open video.")
-        exit()
+        print(f"Error: Could not open video {path}")
+        exit(1)
 
     dbController = DataBaseController(db_params)
 
@@ -40,14 +39,17 @@ if __name__ == "__main__":
 
     parkBot()
 
-    entryTracker = EntryTracker(parkBot.carEntered, dbController.isCarAllowed,
-                                parkBot.carAllowedToEnter, parkBot.readyToCloseEntryGate)
+    LicensePlateReader = LicensePlateReader(parkBot.checkCar)
 
-    exitTracker = ExitTracker(parkBot.carExited, dbController.isCarAllowed,
-                              parkBot.carAllowedToExit, parkBot.readyToCloseExitGate)
+    entryTracker = EntryTracker(LicensePlateReader, parkBot.carEntered)
+
+    exitTracker = ExitTracker(LicensePlateReader, parkBot.carExited)
 
     CarTracker = CarTracker(parkBot.cars)
 
-    VideoViewer = VideoViewer("Parking Video")
+    parkBot.process_video(entryTracker, exitTracker, CarTracker)
 
-    VideoViewer.process_video(entryTracker, exitTracker, CarTracker, str(path))
+    cam.release()
+    cv2.destroyAllWindows()
+
+
