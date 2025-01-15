@@ -1,13 +1,14 @@
 import os
+from typing import List
 
 import cv2
 import numpy as np
 from dotenv import load_dotenv
 from inference_sdk import InferenceHTTPClient
 
+from src.Trackables.Box import Box
 from src.Trackables.Cars import Cars, Car, Box
 from src.Trackers.Tracker import Tracker
-import src.Readers.LicensePlateReader as PlateReader
 
 load_dotenv()
 
@@ -36,6 +37,51 @@ class CarTracker(Tracker):
         :param img: img with the new state of parking with cars to track.
         """
         pass
+
+    def predictBoxes(self, img: np.ndarray) -> list[Box]:
+        result = self.CLIENT.infer(img, model_id="hotwheels-object-detection/10")
+
+        predictions = result.get("predictions", [])
+
+        # print(predictions)
+        predicted_cars = [
+            pred for pred in predictions if
+            int(pred["width"]) * int(pred["height"]) >= 6000 and float(pred["confidence"]) >= 0.55 and pred[
+                "class"] == "car"
+        ]
+
+        boxes = []
+
+        for car in predicted_cars:
+            x = int(car["x"])
+            y = int(car["y"])
+            width = int(car["width"])
+            height = int(car["height"])
+
+            x1 = x - width // 2
+            y1 = y - height // 2
+            x2 = x + width // 2
+            y2 = y + height // 2
+            x3 = x - width // 2
+            y3 = y + height // 2
+            x4 = x + width // 2
+            y4 = y - height // 2
+
+            boxes.append(Box(x1, y1, x2, y2, x3, y3, x4, y4))
+
+        return boxes
+
+    def drawBoxes(self, img: np.ndarray, boxes: List[Box]) -> np.ndarray:
+        """
+        Draws boxes around cars on the frame.
+        :param img: frame to draw boxes on.
+        :param boxes: list of boxes to draw.
+        :return: img with boxes drawn around cars.
+        """
+        for box in boxes:
+            cv2.rectangle(img, box.p[0], box.p[3], (0, 255, 0), 7)
+
+        return img
 
     def locateCarBoxes(self, img: np.ndarray, license_plate: str) -> Cars:
         """
@@ -80,7 +126,6 @@ class CarTracker(Tracker):
                 self.license_plates.insert(0, license_plate)
                 self.license_plates = list(dict.fromkeys(self.license_plates))
                 # self.license_plates_dict[self.license_plates[0]] = Box(x1, y1, x2, y2, x3, y3, x4, y4)
-
 
             # If this is the last car, append with the license plate, otherwise append with None
             # if i == len(predicted_cars) - 1:
