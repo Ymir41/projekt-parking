@@ -65,3 +65,6 @@ class ExitTracker:
         self.carExited.emit(self.plate_number)
         self.plate_number = None
         print("Exit gate closed")
+
+    def getPlateNumber(self):
+        return self.plate_number
