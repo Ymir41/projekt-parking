@@ -42,6 +42,8 @@ class ParkBot(object):
         self.parkingState = {}  # contains parkingSpot:carPlate
         self.videoViewer = VideoViewer("Parking Video")
 
+        self.car_dict = {}
+
     def setCheckCar(self, func) -> None:
         """
         Sets the function used to determine whether car of given plate is allowed in.
@@ -128,6 +130,8 @@ class ParkBot(object):
 
         """
 
+        plates = []
+
         cv2.waitKeyEx(0)
 
         while True:
@@ -142,7 +146,7 @@ class ParkBot(object):
 
             entry_box, exit_box = self.getEntryAndExitBox(frame)
 
-            boxes = carTracker.predictBoxes(frame)
+            boxes = carTracker.predictBoxes(frame, entryTracker.getPlateNumber())
 
             frame = cv2.rectangle(frame, entry_box.p[0], entry_box.p[3], (0, 255, 255), 3)
             frame = cv2.rectangle(frame, exit_box.p[0], exit_box.p[3], (255, 255, 0), 3)
@@ -153,7 +157,7 @@ class ParkBot(object):
             is_car_entering = False
             is_car_exiting = False
 
-            for car_box in boxes:
+            for i, car_box in enumerate(boxes):
                 middle_x = (car_box.p[0][0] + car_box.p[1][0]) // 2
                 middle_y = (car_box.p[0][1] + car_box.p[2][1]) // 2
                 car_box_middle = (middle_x, middle_y)
@@ -164,14 +168,35 @@ class ParkBot(object):
                     print("Car inside entry box.")
                     frame = cv2.rectangle(frame, car_box.p[0], car_box.p[3], (255, 0, 0), 3)
                     ocr_entrance = entryTracker.process_frame(ocr_entrance)
+                    plate = entryTracker.getPlateNumber()
+                    if plate:
+                        self.car_dict[plate] = car_box
+                        plates.insert(0, entryTracker.getPlateNumber())
+                        plates = list(dict.fromkeys(plates))
+
                 elif exit_box.inside(car_box.p[0]) or exit_box.inside(car_box.p[1]) or exit_box.inside(
                         car_box.p[2]) or exit_box.inside(car_box.p[3]) or exit_box.inside(car_box_middle):
                     is_car_exiting = True
                     print("Car inside exit box.")
                     frame = cv2.rectangle(frame, car_box.p[0], car_box.p[3], (255, 0, 0), 3)
                     ocr_exit = exitTracker.process_frame(ocr_exit)
+
+                    plate = exitTracker.getPlateNumber()
+                    if plate and plate in self.car_dict:
+                        self.car_dict.pop(plate)
                 else:
                     frame = cv2.rectangle(frame, car_box.p[0], car_box.p[3], (0, 255, 0), 3)
+                    if self.car_dict.get(plates[i]):
+                        self.car_dict[plates[i]] = car_box
+
+            print(self.car_dict)
+            for plate, car_box in self.car_dict.items():
+                if self.car_dict[plate]:
+                    text_position = (car_box.p[0][0], max(car_box.p[0][1] - 15, 15))
+                    cv2.putText(
+                        frame, plate, text_position,
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3, cv2.LINE_AA
+                    )
 
             if not is_car_entering:
                 if isEntryGateOpen:
