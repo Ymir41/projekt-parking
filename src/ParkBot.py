@@ -141,7 +141,12 @@ class ParkBot(object):
                 break
 
             ocr_entrance, ocr_exit = self.getEntryAndExitFrameForOCR(frame)
+            zero_frame = np.zeros((frame.shape[0], frame.shape[1], 3), np.uint8)
 
+            colors = {i: (0, 0, 255) for i in range(1, 16)}
+            zero_frame = self.spots.draw(zero_frame, colors)
+
+            zero_frame = cv2.resize(zero_frame, (1000, 675))
             frame = cv2.resize(frame, (1000, 675))
 
             entry_box, exit_box = self.getEntryAndExitBox(frame)
@@ -206,8 +211,8 @@ class ParkBot(object):
                 if isExitGateOpen:
                     exitTracker.closeGate()
 
-            colors = {i:(0, 0, 255) for i in range(1, 16)}
-            frame = self.spots.draw(frame, colors)
+            mask = zero_frame[:, :, 2] > 0
+            frame[mask] = zero_frame[mask]
 
             self.videoViewer.displayFrame(frame)
 

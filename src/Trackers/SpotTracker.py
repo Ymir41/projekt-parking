@@ -26,16 +26,3 @@ class SpotTracker(Tracker):
             self.spots.append(Spot(number, box))
 
 
-if __name__ == "__main__":
-    spots = Spots()
-    st = SpotTracker(spots)
-    st.loadSpots("../../spot-config.json")
-    image = cv2.imread("/home/janek/Documents/university/sem5/PSiO/projekt-parking/img3/20241223_123425.jpg")
-    image = image / 255
-    colors = {1:[0,0,1.0], 2:[0,0,1.0], 3:[0,0,1.0], 4:[0,0,1.0], 5:[0,0,1.0], 6:[0,0,1.0], 7:[0,0,1.0], 8:[0,0,1.0], 9:[0,0,1.0], 10:[0,0,1.0], 11:[0,0,1.0], 12:[0,0,1.0], 13:[0,0,1.0], 14:[0,0,1.0], 15:[0,0,1.0] }
-
-    image = spots.draw(image, colors)
-    print(image.shape)
-    cv2.imshow("window", cv2.resize(image, (300, 400)))
-    cv2.waitKey(0)
-
