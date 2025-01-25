@@ -43,8 +43,8 @@ class TestBox(unittest.TestCase):
         box2 = Box.from2Corners(0, 0, 21, 21)
         box3 = Box.from2Corners(0, 0, 30, 30)
 
-        self.assertTrue(Box.almostEquel(box1, box2, tolerance=0.1))
-        self.assertFalse(Box.almostEquel(box1, box3, tolerance=0.1))
+        self.assertTrue(Box.almostEqual(box1, box2, tolerance=0.1))
+        self.assertFalse(Box.almostEqual(box1, box3, tolerance=0.1))
 
     def test_equality(self):
         box1 = Box.from2Corners(0, 0, 2, 2)

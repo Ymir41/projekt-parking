@@ -11,7 +11,7 @@ class LicensePlateReader:
 
     def plate_read_check(self, uint8_cropped_image: np.ndarray) -> tuple:
         """
-        Reads the plate number and checks if the car is allowed to enter.
+        Reads the plate number and checks if the car is allowed to pass through.
         Args:
             uint8_cropped_image: The cropped image of the license plate.
 
@@ -30,7 +30,7 @@ class LicensePlateReader:
             return 0, res, False
 
         if self.isCarAllowed(plate_number):
-            print("Car with plate number", plate_number, "is allowed to enter.")
+            print("Car with plate number", plate_number, "is allowed to pass through.")
             return plate_number, res, True
 
         print("Car with plate number", plate_number, "is not allowed. Deep inspection in progress.")

@@ -35,6 +35,7 @@ class DataBaseController(object):
                 self.connection = None
                 db.close()
             return res
+
         return wrapper
 
     @connect
@@ -54,7 +55,6 @@ class DataBaseController(object):
             return None
         return car_plate_id[0]
 
-
     @connect
     def isCarAllowed(self, plate_number: str) -> bool:
         """
@@ -68,7 +68,6 @@ class DataBaseController(object):
         """
         self.cursor.execute("SELECT car_plate_id FROM car_plates WHERE plate_number = %s", (plate_number,))
         result = self.cursor.fetchone()
-
 
         if result is None:
             return False
@@ -88,7 +87,7 @@ class DataBaseController(object):
         """
         car_plate_id = self.getIDFromPlateNumber(plate_number)
         result = self.cursor.execute("INSERT INTO car_movements (car_plate_id, entry_time) VALUES (%s,%s)",
-                                (car_plate_id, datetime.datetime.now()))
+                                     (car_plate_id, datetime.datetime.now()))
 
         if result == 0:
             return False
@@ -97,7 +96,7 @@ class DataBaseController(object):
         return True
 
     @connect
-    def addCarExit(self, plate_number:str) -> bool:
+    def addCarExit(self, plate_number: str) -> bool:
         """
         Adds an exit record for a car.
 
@@ -108,8 +107,9 @@ class DataBaseController(object):
             bool: True if the exit was added successfully, False otherwise.
         """
         car_plate_id = self.getIDFromPlateNumber(plate_number)
-        result = self.cursor.execute("UPDATE car_movements SET exit_time = %s WHERE car_plate_id = %s AND exit_time IS NULL",
-                                (datetime.datetime.now(), car_plate_id))
+        result = self.cursor.execute(
+            "UPDATE car_movements SET exit_time = %s WHERE car_plate_id = %s AND exit_time IS NULL",
+            (datetime.datetime.now(), car_plate_id))
 
         if result == 0:
             return False
@@ -118,17 +118,17 @@ class DataBaseController(object):
         return True
 
     @connect
-    def carTookSpot(self, plate_number:str, spot: int) -> bool:
+    def carTookSpot(self, parking_spot_id: int) -> bool:
         """
         Records that a car took a parking spot.
 
         Args:
-            car_plate_id (int): The ID of the car plate.
-            spot (int): The parking spot number.
+            parking_spot_id (int): The parking spot number.
         """
-        car_plate_id = self.getIDFromPlateNumber(plate_number)
-        res = self.cursor.execute("UPDATE parking_spaces SET car_plate_id = %s, is_free = 0 WHERE parking_space_id = %s",
-                             (car_plate_id, spot))
+        res = self.cursor.execute(
+            "UPDATE parking_spaces SET is_free = 0 WHERE parking_space_id = %s",
+            (parking_spot_id,))
+
         if res == 0:
             return False
 
@@ -136,20 +136,18 @@ class DataBaseController(object):
         return True
 
     @connect
-    def carFreedSpot(self, spot: int) -> bool:
+    def carFreedSpot(self, parking_spot_id: int) -> bool:
         """
         Records that a car freed a parking spot.
 
         Args:
-            spot (int): The parking spot number.
+            parking_spot_id (int): The parking spot number.
         """
-        res = self.cursor.execute("UPDATE parking_spaces SET car_plate_id = NULL, is_free = 1 WHERE parking_space_id = %s",
-                             (spot,))
+        res = self.cursor.execute(
+            "UPDATE parking_spaces SET car_plate_id = NULL, is_free = 1 WHERE parking_space_id = %s",
+            (parking_spot_id,))
         if res == 0:
             return False
 
         self.connection.commit()
         return True
-
-
-

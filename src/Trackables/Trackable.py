@@ -24,6 +24,9 @@ class Trackable(object):
     def getLabel(self):
         return self.label
 
+    def setLabel(self, new_label: str):
+        self.label = new_label
+
     def __eq__(self, other: Self):
         if not isinstance(other, Trackable):
             return NotImplemented
