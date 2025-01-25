@@ -15,7 +15,7 @@ class ParkBot(object):
     and announces them through Signals.
     """
 
-    def __init__(self, cap: cv2.VideoCapture) -> None:
+    def __init__(self, cap: cv2.VideoCapture, spotConfigName: str) -> None:
         """
         :param cap: a cv2.VideoCapture video of parking
         """
@@ -39,6 +39,7 @@ class ParkBot(object):
         self.spots = Spots()
         self.carTracker = CarTracker(self.cars)
         self.spotTracker = SpotTracker(self.spots)
+        self.spotTracker.loadSpots(spotConfigName)
         self.parkingState = {}  # contains parkingSpot:carPlate
         self.videoViewer = VideoViewer("Parking Video")
 
@@ -132,6 +133,7 @@ class ParkBot(object):
 
         plates = []
 
+
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -203,6 +205,9 @@ class ParkBot(object):
             if not is_car_exiting:
                 if isExitGateOpen:
                     exitTracker.closeGate()
+
+            colors = {i:(0, 0, 255) for i in range(1, 16)}
+            frame = self.spots.draw(frame, colors)
 
             self.videoViewer.displayFrame(frame)
 
