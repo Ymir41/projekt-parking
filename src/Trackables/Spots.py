@@ -1,7 +1,8 @@
 from src.Trackables.Cars import Cars
 from src.Trackables.Spot import Spot
+from src.Trackables.TrackableCollection import TrackableCollection
 
-class Spots(object):
+class Spots(TrackableCollection):
     """
     It holds parking spots.
     """
