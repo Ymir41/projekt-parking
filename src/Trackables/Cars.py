@@ -49,13 +49,21 @@ class Cars(TrackableCollection):
         return self.__dimensions
 
     def getCarOfLocation(self, x: int, y: int):
-        # Sprawdź, czy x i y są w zakresie wymiarów tablicy
-        if x >= 0 and y >= 0 and y < self.__dimensions[0] and x < self.__dimensions[1]:
-            if self.__locations[y, x] == -1:
-                return None
-            return self.__cars[self.__locations[y, x]]
-        else:
+        """
+        Returns car located at specific location (x, y).
+        """
+        # Sprawdź, czy współrzędne są w zakresie
+        if x < 0 or y < 0 or y >= self.__dimensions[0] or x >= self.__dimensions[1]:
             return None
+
+        # Pobierz wartość indeksu z lokalizacji
+        location_index = self.__locations[y, x]
+
+        # Sprawdź, czy lokalizacja jest pusta lub indeks jest poza zakresem
+        if location_index == -1 or not (0 <= int(location_index) < len(self.__cars)):
+            return None
+
+        return self.__cars[int(location_index)]
 
     def updateCarsPositions(self, new_cars: 'Cars') -> None:
         """
@@ -103,9 +111,11 @@ class Cars(TrackableCollection):
         self.callculateLocations()
 
     def callculateLocations(self):
-        self.__locations = np.zeros(self.__dimensions)*(-1)
+        self.__locations = np.zeros(self.__dimensions, dtype=int) * -1
         for i, car in enumerate(self.__cars):
-            self.__locations[car.getBox().getMask(self.__dimensions)] = i
+            mask = car.getBox().getMask(self.__dimensions)
+            if mask.any():  # Dodano zabezpieczenie przed pustymi maskami
+                self.__locations[mask] = i
 
 
     def __updateLocations(self, car: 'Car') -> None:
@@ -155,10 +165,14 @@ class Cars(TrackableCollection):
         Adds new car to this instance of Cars class (does not affect any database).
         :param car: a Car object to be added
         """
-        if self.getCarOfLocation(*car.getLocation()) != None:
-            raise ValueError("Car of with location already occupied")
+        location = car.getLocation()
+
+        # Upewnij się, że współrzędne są całkowite
+        x, y = int(location[0]), int(location[1])
 
         self.__cars.append(car)
+
+        # Dodaj nową lokalizację do maski
         box = car.getBox()
         mask = box.getMask(self.__locations.shape)
         self.__locations[mask] = len(self.__cars) - 1
