@@ -132,8 +132,6 @@ class ParkBot(object):
 
         plates = []
 
-        cv2.waitKeyEx(0)
-
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -146,7 +144,7 @@ class ParkBot(object):
 
             entry_box, exit_box = self.getEntryAndExitBox(frame)
 
-            boxes = carTracker.predictBoxes(frame, entryTracker.getPlateNumber())
+            boxes = carTracker.predictBoxes(frame)
 
             frame = cv2.rectangle(frame, entry_box.p[0], entry_box.p[3], (0, 255, 255), 3)
             frame = cv2.rectangle(frame, exit_box.p[0], exit_box.p[3], (255, 255, 0), 3)
