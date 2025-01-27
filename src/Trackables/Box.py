@@ -33,7 +33,7 @@ class Box(object):
 
         if are_points_collinear(p1, p2, p3) or are_points_collinear(p2, p4, p3) or are_points_collinear(p1, p2,
                                                                                                         p4) or are_points_collinear(
-                p1, p3, p4):
+            p1, p3, p4):
             raise ValueError("3 or 4 points are collinear")
 
         p_all = [p1, p2, p3, p4]
@@ -188,3 +188,13 @@ class Box(object):
         mask = quadrilateral_mask(*self.p, grid_shape=shape)
 
         return mask
+
+    def scale(self, dims_old, dims_new):
+        scale_x = dims_old[0] / dims_new[0]
+        scale_y = dims_old[1] / dims_new[1]
+
+        scaled_positions = [
+            (int(x * scale_x), int(y * scale_y)) for x, y in self.p
+        ]
+
+        self.p = scaled_positions
