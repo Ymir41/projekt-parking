@@ -144,7 +144,7 @@ class DataBaseController(object):
             parking_spot_id (int): The parking spot number.
         """
         res = self.cursor.execute(
-            "UPDATE parking_spaces SET car_plate_id = NULL, is_free = 1 WHERE parking_space_id = %s",
+            "UPDATE parking_spaces SET is_free = 1 WHERE parking_space_id = %s",
             (parking_spot_id,))
         if res == 0:
             return False
