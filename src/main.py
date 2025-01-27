@@ -9,6 +9,8 @@ from Trackers.EntryTracker import EntryTracker
 from Trackers.ExitTracker import ExitTracker
 from Trackers.CarTracker import CarTracker
 from Readers.LicensePlateReader import LicensePlateReader
+from Trackers.SpotTracker import SpotTracker
+from Trackables.Spots import Spots
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
@@ -30,7 +32,9 @@ if __name__ == "__main__":
 
     dbController = DataBaseController(db_params)
 
-    parkBot = ParkBot(cam)
+    spots_path = Path(__file__).parent.parent / 'spot-config.json'
+
+    parkBot = ParkBot(cam, str(spots_path))
     parkBot.setCheckCar(dbController.isCarAllowed)
     parkBot.carParked.addSlot(dbController.carTookSpot)
     parkBot.carUnparked.addSlot(dbController.carFreedSpot)
@@ -51,5 +55,3 @@ if __name__ == "__main__":
 
     cam.release()
     cv2.destroyAllWindows()
-
-

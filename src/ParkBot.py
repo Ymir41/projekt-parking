@@ -15,7 +15,7 @@ class ParkBot(object):
     and announces them through Signals.
     """
 
-    def __init__(self, cap: cv2.VideoCapture) -> None:
+    def __init__(self, cap: cv2.VideoCapture, spotConfigName: str) -> None:
         """
         :param cap: a cv2.VideoCapture video of parking
         """
@@ -39,8 +39,10 @@ class ParkBot(object):
         self.spots = Spots()
         self.carTracker = CarTracker(self.cars)
         self.spotTracker = SpotTracker(self.spots)
+        self.spotTracker.loadSpots(spotConfigName)
         self.parkingState = {}  # contains parkingSpot:carPlate
         self.videoViewer = VideoViewer("Parking Video")
+        self.spots_dict = {i: 0 for i in range(1, 16)}
 
         self.car_dict = {}
 
@@ -54,9 +56,14 @@ class ParkBot(object):
     def __call__(self):
         pass
 
-    def parkingDiffSpots(self, oldParkingState, newParkingState) -> list:
+    def parkingDiffSpots(self, oldParkingState, newParkingState) -> dict:
         ""
-        return []
+        out = {}
+        for i in range(1, 16):
+            if oldParkingState[i] != newParkingState[i]:
+                out[i] = newParkingState[i]
+
+        return out
 
     def getEntryAndExitFrameForOCR(self, frame: np.ndarray) -> tuple:
         """
@@ -132,6 +139,9 @@ class ParkBot(object):
 
         plates = []
 
+        new_dims = (1000, 675)
+        dim = (self.width, self.height)
+        self.spots.scale(new_dims, dim)
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -139,12 +149,22 @@ class ParkBot(object):
                 break
 
             ocr_entrance, ocr_exit = self.getEntryAndExitFrameForOCR(frame)
-
-            frame = cv2.resize(frame, (1000, 675))
-
+            frame = cv2.resize(frame, new_dims)
             entry_box, exit_box = self.getEntryAndExitBox(frame)
 
             boxes = carTracker.predictBoxes(frame)
+            cars = Cars.boxListToCars(boxes, new_dims)
+            parked = self.spots.parked(cars)
+            changes = self.parkingDiffSpots(self.spots_dict, parked)
+            self.spots_dict = parked
+            for change in changes.items():
+                if change[1] == 0:
+                    self.carUnparked.emit(change[0])
+                else:
+                    self.carParked.emit(change[0])
+
+            colors = {p[0]: (255 * (p[1] == 0), 255 * (p[1] == 1), 255 * (p[1] == -1)) for p in parked.items()}
+            frame = self.spots.draw(frame, colors)
 
             frame = cv2.rectangle(frame, entry_box.p[0], entry_box.p[3], (0, 255, 255), 3)
             frame = cv2.rectangle(frame, exit_box.p[0], exit_box.p[3], (255, 255, 0), 3)

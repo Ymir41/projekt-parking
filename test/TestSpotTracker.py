@@ -67,16 +67,18 @@ class TestSpotTracker(unittest.TestCase):
         Test the getSpotNumber method to ensure correct spot numbers are read from images.
         """
         spot_images = [file for file in os.listdir(self.test_folder) if
-                       file.startswith("spot") and file.endswith(".jpg")]
+                       file.startswith("spot") and not file.startswith("spots") and file.endswith(".jpg")]
 
         for img_file in spot_images:
             img_path = os.path.join(self.test_folder, img_file)
-            expected_number = int(img_file.replace("spot", "").replace(".jpg", ""))
+            expected_number, orientation =img_file.replace("spot", "").replace(".jpg", "").split("-")
+            expected_number = int(expected_number)
+            orientation = orientation.upper()
 
             img = cv2.imread(img_path)
             spot_tracker = SpotTracker(Spots())
 
-            result_number = spot_tracker.getSpotNumber(img)
+            result_number = spot_tracker.getSpotNumber(img, orientation)
             self.assertEqual(result_number, expected_number, f"Spot number mismatch for image: {img_file} (should be: {expected_number}, is: {result_number}")
 
 

@@ -1,5 +1,6 @@
 from src.Trackables.Trackable import Trackable, Box
 import numpy as np
+import cv2
 
 class TrackableCollection(object):
     def trackables(self) -> list[tuple[int|str, Box]]: # implemented in each class
@@ -13,4 +14,7 @@ class TrackableCollection(object):
         :return: np.ndarray an image with boxes of that TrackableCollection drawn on.
         """
         for label, box in self.trackables():
-            pass
+            color = colors[label]
+            img = cv2.rectangle(img, box.p[0], box.p[3], color, 10)
+
+        return img

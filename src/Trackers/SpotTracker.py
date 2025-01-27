@@ -1,7 +1,10 @@
-import numpy as np
-from src.Trackers.Tracker import Tracker
+import json
 
+import cv2
+
+from src.Trackers.Tracker import Tracker
 from src.Trackables.Spots import Spots, Spot
+from src.Trackables.Box import Box
 
 class SpotTracker(Tracker):
     """
@@ -13,17 +16,13 @@ class SpotTracker(Tracker):
         """
         self.spots = spots
 
-    def track(self, img) -> None:
-        """
-        Looks for parking spots on an image (img) and saves there locations to self.spots
-        :param img: image where with the spots to locate
-        """
-        pass
+    def loadSpots(self, filename:str) -> None:
+        with open(filename, "r") as f:
+            data = json.load(f)
 
-    def getSpotNumber(self, spotImg:np.ndarray) -> int:
-        """
-        It reads the spot number from an image of single spot. It determines the orientation of that spot.
-        :param spotImg: a fragment of image with one spot.
-        :return: int - a number of that spot
-        """
-        pass
+        for key, val in data.items():
+            number = int(key.replace("box", ""))
+            box = Box.from2Corners(*val)
+            self.spots.append(Spot(number, box))
+
+
