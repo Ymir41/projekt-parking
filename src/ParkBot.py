@@ -42,7 +42,7 @@ class ParkBot(object):
         self.spotTracker.loadSpots(spotConfigName)
         self.parkingState = {}  # contains parkingSpot:carPlate
         self.videoViewer = VideoViewer("Parking Video")
-        self.spots_dict = {i:0 for i in range(1,16)}
+        self.spots_dict = {i: 0 for i in range(1, 16)}
 
         self.car_dict = {}
 
@@ -59,7 +59,7 @@ class ParkBot(object):
     def parkingDiffSpots(self, oldParkingState, newParkingState) -> dict:
         ""
         out = {}
-        for i in range(1,16):
+        for i in range(1, 16):
             if oldParkingState[i] != newParkingState[i]:
                 out[i] = newParkingState[i]
 
@@ -139,35 +139,32 @@ class ParkBot(object):
 
         plates = []
 
-
+        new_dims = (1000, 675)
+        dim = (self.width, self.height)
+        self.spots.scale(new_dims, dim)
         while True:
             ret, frame = self.cap.read()
-            dim = frame.shape
             if not ret:
                 print("End of video or error reading entry_frame.")
                 break
 
             ocr_entrance, ocr_exit = self.getEntryAndExitFrameForOCR(frame)
-            zero_frame = np.zeros((frame.shape[0], frame.shape[1], 3), np.uint8)
-
-            frame = cv2.resize(frame, (1000, 675))
-
+            frame = cv2.resize(frame, new_dims)
             entry_box, exit_box = self.getEntryAndExitBox(frame)
 
             boxes = carTracker.predictBoxes(frame)
-            cars = Cars.boxListToCars(boxes, dim)
+            cars = Cars.boxListToCars(boxes, new_dims)
             parked = self.spots.parked(cars)
             changes = self.parkingDiffSpots(self.spots_dict, parked)
+            self.spots_dict = parked
             for change in changes.items():
-                if change[1]==0:
+                if change[1] == 0:
                     self.carUnparked.emit(change[0])
                 else:
                     self.carParked.emit(change[0])
 
-            colors = {p[0]: (255*(p[1]==0), 255*(p[1]==1), 255*(p[1]==-1)) for p in parked.items()}
-            zero_frame = self.spots.draw(zero_frame, colors)
-
-            zero_frame = cv2.resize(zero_frame, (1000, 675))
+            colors = {p[0]: (255 * (p[1] == 0), 255 * (p[1] == 1), 255 * (p[1] == -1)) for p in parked.items()}
+            frame = self.spots.draw(frame, colors)
 
             frame = cv2.rectangle(frame, entry_box.p[0], entry_box.p[3], (0, 255, 255), 3)
             frame = cv2.rectangle(frame, exit_box.p[0], exit_box.p[3], (255, 255, 0), 3)
@@ -226,9 +223,6 @@ class ParkBot(object):
             if not is_car_exiting:
                 if isExitGateOpen:
                     exitTracker.closeGate()
-
-            mask = zero_frame[:, :, 2] > 0
-            frame[mask] = zero_frame[mask]
 
             self.videoViewer.displayFrame(frame)
 
