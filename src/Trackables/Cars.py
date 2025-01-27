@@ -5,6 +5,7 @@ from src.Trackables.Car import Car, Box
 from src.Trackables.TrackableCollection import TrackableCollection
 from typing_extensions import Self
 
+
 class Cars(TrackableCollection):
     """
     It holds cars on the parking.
@@ -13,12 +14,12 @@ class Cars(TrackableCollection):
     def __init__(self, dimensions: tuple[int, int]) -> None:
         self.__cars = []
         self.__dimensions = dimensions
-        self.__locations:np.ndarray = np.zeros(dimensions, dtype=int) - 1
+        self.__locations: np.ndarray = np.zeros(dimensions, dtype=int) - 1
 
     def __iter__(self):
         return self.__cars.__iter__()
 
-    def __getitem__(self, index: int|str) -> Car:
+    def __getitem__(self, index: int | str) -> Car:
         if type(index) == int:
             return self.__cars[index]
         elif type(index) == str:
@@ -31,7 +32,7 @@ class Cars(TrackableCollection):
         return len(self.__cars)
 
     def trackables(self) -> list[tuple[any, any]]:
-            return [(car.label, car.getBox()) for car in self.__cars]
+        return [(car.label, car.getBox()) for car in self.__cars]
 
     @classmethod
     def boxListToCars(cls, boxList, dim):
@@ -68,20 +69,20 @@ class Cars(TrackableCollection):
         location_index = self.__locations[y, x]
 
         # Sprawdź, czy lokalizacja jest pusta lub indeks jest poza zakresem
-        if location_index == -1 or not (0 <= int(location_index) < len(self.__cars)):
+        if any(location_index == -1) or not all(0 <= int(x) < len(self.__cars) for x in location_index):
             return None
 
         return self.__cars[int(location_index)]
 
-    def areLocationsFree(self, mask:np.ndarray) -> bool:
+    def areLocationsFree(self, mask: np.ndarray) -> bool:
         """
         Checks if locations of mask are not occupied.
         :param mask: locations in image to check for cars
         :return: true if locations under mask free, false otherwise
         """
         tmp = np.where(self.__locations[mask] == -1, 0, 1)
-        np.sum(tmp)
-        return tmp==0
+        tmp = np.sum(tmp)
+        return tmp == 0
 
     def updateCarsPositions(self, new_cars: 'Cars') -> None:
         """
@@ -119,7 +120,7 @@ class Cars(TrackableCollection):
             potential_old_cars = list(filter(lambda car: car.getBox().withinRange(new_car.getBox()), unmoved.values()))
             if len(potential_old_cars) == 0:
                 continue
-            old_car = min(potential_old_cars, key= lambda car: car.getBox().distance(new_car.getBox()))
+            old_car = min(potential_old_cars, key=lambda car: car.getBox().distance(new_car.getBox()))
             old_car.move(new_car.getBox())
             del unmoved[old_car.getPlate()]
 
@@ -134,7 +135,6 @@ class Cars(TrackableCollection):
             mask = car.getBox().getMask(self.__dimensions)
             if mask.any():  # Dodano zabezpieczenie przed pustymi maskami
                 self.__locations[mask] = i
-
 
     def __updateLocations(self, car: 'Car') -> None:
         """
@@ -199,14 +199,14 @@ class Cars(TrackableCollection):
         """
         :param index: index in self.__cars of car to be removed
         """
-        if index>len(self.__cars):
+        if index > len(self.__cars):
             raise IndexError("Index out of range")
 
         self.__locations = np.where(self.__locations == index, -1, self.__locations)
-        self.__locations = np.where(self.__locations > index, self.__locations-1, self.__locations)
+        self.__locations = np.where(self.__locations > index, self.__locations - 1, self.__locations)
         del self.__cars[index]
 
-    def removeByPlate(self, plate:str):
+    def removeByPlate(self, plate: str):
         """
         Removes car of given plate number from its self (this instance of Cars class, does not affect any database).
         :param plate: plate number of car to be removed
@@ -218,3 +218,26 @@ class Cars(TrackableCollection):
 
     def getPlateFromIndex(self, index: int) -> str:
         return self.__cars[index].getPlate()
+
+    def getCarIndexOfLocation(self, spotBox: Box):
+        """
+        Returns index of car located at specific location (x, y).
+        """
+
+        for i, car in enumerate(self.__cars):
+            midpoint_1 = ((car.getBox().p[0][0] + car.getBox().p[1][0]) // 2,
+                          (car.getBox().p[0][1] + car.getBox().p[1][1]) // 2)  #0-1
+            midpoint_2 = ((car.getBox().p[1][0] + car.getBox().p[2][0]) // 2,
+                          (car.getBox().p[1][1] + car.getBox().p[2][1]) // 2)  #1-2
+            midpoint_3 = ((car.getBox().p[2][0] + car.getBox().p[3][0]) // 2,
+                          (car.getBox().p[2][1] + car.getBox().p[3][1]) // 2)  #2-3
+            midpoint_4 = ((car.getBox().p[3][0] + car.getBox().p[0][0]) // 2,
+                          (car.getBox().p[3][1] + car.getBox().p[0][1]) // 2)  #3-0
+
+            if spotBox.inside(car.getLocation()) \
+                    or spotBox.inside(midpoint_1) \
+                    or spotBox.inside(midpoint_2) \
+                    or spotBox.inside(midpoint_3) \
+                    or spotBox.inside(midpoint_4):
+                return i
+
