@@ -2,10 +2,12 @@ from src.Trackables.Cars import Cars
 from src.Trackables.Spot import Spot
 from src.Trackables.TrackableCollection import TrackableCollection
 
+
 class Spots(TrackableCollection):
     """
     It holds parking spots.
     """
+
     def __init__(self) -> None:
         self.__spots = {}
 
@@ -31,16 +33,36 @@ class Spots(TrackableCollection):
         :return: dictionary - key: a spot number, value: a car plate number
         """
         spots = {}
-        for number, spot in self.items():
-            location = spot.getLocation()
-            car = cars.getCarOfLocation(*location)
-            mask = spot.getBox().getMask()
-            if not car is None:
-                spots[number] = 1
-            if not cars.areLocationsFree(mask):
-                spots[number] = -1
+        for number, spot in self.__spots.items():
+            car_index = cars.getCarIndexOfLocation(spot.getBox())
+
+            if not car_index is None:
+                spots[number] = car_index
             else:
-                spots[number] = 0
+                spots[number] = -2
+
+        indexes = []
+        seen = {}
+
+        for idx, value in spots.items():
+            if value == -2:
+                continue
+            if value in seen:
+                indexes.append(idx)
+                if seen[value] is not None:
+                    indexes.append(seen[value])
+                    seen[value] = None  # Mark as already added
+            else:
+                seen[value] = idx
+
+        for idx in spots.keys():
+            if idx in indexes:
+                spots[idx] = -1
+            elif spots[idx] == -2:
+                spots[idx] = 0
+            else:
+                spots[idx] = 1
+
         return spots
 
     def __len__(self) -> int:
@@ -50,5 +72,11 @@ class Spots(TrackableCollection):
         return self.__spots[index]
 
     def __bool__(self) -> bool:
-        return len(self.__spots)>0
+        return len(self.__spots) > 0
 
+    def scale(self, dims_old, dims_new):
+        for indx in self.__spots.keys():
+            spot = self.__spots[indx]
+            box = spot.getBox()
+            box.scale(dims_old, dims_new)
+            self.__spots[indx] = Spot(indx, box)
