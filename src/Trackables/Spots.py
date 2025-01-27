@@ -24,7 +24,7 @@ class Spots(TrackableCollection):
     def remove(self, index: int):
         del self.__spots[index]
 
-    def parkedCars(self, cars: Cars) -> dict:
+    def parked(self, cars: Cars) -> dict:
         """
         Determines which parking spots are taken and by which car.
         :param cars: A Cars object that has the cars to determine which are parked and where.
@@ -34,10 +34,13 @@ class Spots(TrackableCollection):
         for number, spot in self.items():
             location = spot.getLocation()
             car = cars.getCarOfLocation(*location)
-            if car is None:
-                spots[number] = None
+            mask = spot.getBox().getMask()
+            if not car is None:
+                spots[number] = 1
+            if not cars.areLocationsFree(mask):
+                spots[number] = -1
             else:
-                spots[number] = car.label
+                spots[number] = 0
         return spots
 
     def __len__(self) -> int:

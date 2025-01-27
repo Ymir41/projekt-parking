@@ -42,6 +42,7 @@ class ParkBot(object):
         self.spotTracker.loadSpots(spotConfigName)
         self.parkingState = {}  # contains parkingSpot:carPlate
         self.videoViewer = VideoViewer("Parking Video")
+        self.spots_dict = {i:0 for i in range(1,16)}
 
         self.car_dict = {}
 
@@ -55,9 +56,14 @@ class ParkBot(object):
     def __call__(self):
         pass
 
-    def parkingDiffSpots(self, oldParkingState, newParkingState) -> list:
+    def parkingDiffSpots(self, oldParkingState, newParkingState) -> dict:
         ""
-        return []
+        out = {}
+        for i in range(1,16):
+            if oldParkingState[i] != newParkingState[i]:
+                out[i] = newParkingState[i]
+
+        return out
 
     def getEntryAndExitFrameForOCR(self, frame: np.ndarray) -> tuple:
         """
@@ -136,6 +142,7 @@ class ParkBot(object):
 
         while True:
             ret, frame = self.cap.read()
+            dim = frame.shape
             if not ret:
                 print("End of video or error reading entry_frame.")
                 break
@@ -143,15 +150,24 @@ class ParkBot(object):
             ocr_entrance, ocr_exit = self.getEntryAndExitFrameForOCR(frame)
             zero_frame = np.zeros((frame.shape[0], frame.shape[1], 3), np.uint8)
 
-            colors = {i: (0, 0, 255) for i in range(1, 16)}
-            zero_frame = self.spots.draw(zero_frame, colors)
-
-            zero_frame = cv2.resize(zero_frame, (1000, 675))
             frame = cv2.resize(frame, (1000, 675))
 
             entry_box, exit_box = self.getEntryAndExitBox(frame)
 
             boxes = carTracker.predictBoxes(frame)
+            cars = Cars.boxListToCars(boxes, dim)
+            parked = self.spots.parked(cars)
+            changes = self.parkingDiffSpots(self.spots_dict, parked)
+            for change in changes.items():
+                if change[1]==0:
+                    self.carUnparked.emit(change[0])
+                else:
+                    self.carParked.emit(change[0])
+
+            colors = {p[0]: (255*(p[1]==0), 255*(p[1]==1), 255*(p[1]==-1)) for p in parked.items()}
+            zero_frame = self.spots.draw(zero_frame, colors)
+
+            zero_frame = cv2.resize(zero_frame, (1000, 675))
 
             frame = cv2.rectangle(frame, entry_box.p[0], entry_box.p[3], (0, 255, 255), 3)
             frame = cv2.rectangle(frame, exit_box.p[0], exit_box.p[3], (255, 255, 0), 3)

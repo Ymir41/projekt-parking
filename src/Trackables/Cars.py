@@ -33,6 +33,14 @@ class Cars(TrackableCollection):
     def trackables(self) -> list[tuple[any, any]]:
             return [(car.label, car.getBox()) for car in self.__cars]
 
+    @classmethod
+    def boxListToCars(cls, boxList, dim):
+        out = Cars(dim)
+        for box in boxList:
+            car = Car("", box)
+            out.append(car)
+        return out
+
     def copy(self) -> Self:
         """
         :return Cars: copy of itself
@@ -64,6 +72,16 @@ class Cars(TrackableCollection):
             return None
 
         return self.__cars[int(location_index)]
+
+    def areLocationsFree(self, mask:np.ndarray) -> bool:
+        """
+        Checks if locations of mask are not occupied.
+        :param mask: locations in image to check for cars
+        :return: true if locations under mask free, false otherwise
+        """
+        tmp = np.where(self.__locations[mask] == -1, 0, 1)
+        np.sum(tmp)
+        return tmp==0
 
     def updateCarsPositions(self, new_cars: 'Cars') -> None:
         """
