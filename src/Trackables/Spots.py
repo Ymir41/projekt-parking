@@ -30,7 +30,7 @@ class Spots(TrackableCollection):
         """
         Determines which parking spots are taken and by which car.
         :param cars: A Cars object that has the cars to determine which are parked and where.
-        :return: dictionary - key: a spot number, value: a car plate number
+        :return: dictionary - key: a spot number, value: 1 if taken, 0 if free, -1 if incorrectly parked
         """
         spots = {}
         for number, spot in self.__spots.items():

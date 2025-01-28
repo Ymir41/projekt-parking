@@ -183,7 +183,6 @@ class Box(object):
             # Combine the masks
             return mask_triangle1 | mask_triangle2
 
-        # Example Usage
 
         mask = quadrilateral_mask(*self.p, grid_shape=shape)
 
