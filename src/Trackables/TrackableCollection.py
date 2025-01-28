@@ -15,6 +15,6 @@ class TrackableCollection(object):
         """
         for label, box in self.trackables():
             color = colors[label]
-            img = cv2.rectangle(img, box.p[0], box.p[3], color, 10)
+            img = cv2.rectangle(img, box.p[0], box.p[3], color, 3)
 
         return img

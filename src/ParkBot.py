@@ -163,7 +163,7 @@ class ParkBot(object):
                 else:
                     self.carParked.emit(change[0])
 
-            colors = {p[0]: (255 * (p[1] == 0), 255 * (p[1] == 1), 255 * (p[1] == -1)) for p in parked.items()}
+            colors = {p[0]: (100 * (p[1] == 0), 100 * (p[1] == 1), 100 * (p[1] == -1)) for p in parked.items()}
             frame = self.spots.draw(frame, colors)
 
             frame = cv2.rectangle(frame, entry_box.p[0], entry_box.p[3], (0, 255, 255), 3)
@@ -206,15 +206,6 @@ class ParkBot(object):
                     frame = cv2.rectangle(frame, car_box.p[0], car_box.p[3], (0, 255, 0), 3)
                     if self.car_dict.get(plates[i]):
                         self.car_dict[plates[i]] = car_box
-
-            print(self.car_dict)
-            for plate, car_box in self.car_dict.items():
-                if self.car_dict[plate]:
-                    text_position = (car_box.p[0][0], max(car_box.p[0][1] - 15, 15))
-                    cv2.putText(
-                        frame, plate, text_position,
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3, cv2.LINE_AA
-                    )
 
             if not is_car_entering:
                 if isEntryGateOpen:

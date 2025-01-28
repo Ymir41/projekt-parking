@@ -79,7 +79,7 @@ class CarTracker(Tracker):
         :return: img with boxes drawn around cars.
         """
         for box in boxes:
-            cv2.rectangle(img, box.p[0], box.p[3], (0, 255, 0), 7)
+            cv2.rectangle(img, box.p[0], box.p[3], (0, 255, 0), 3)
 
         return img
 
