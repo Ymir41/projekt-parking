@@ -1,6 +1,5 @@
 import cv2
 import configparser
-import MySQLdb
 from pathlib import Path
 
 from ParkBot import ParkBot
@@ -9,8 +8,7 @@ from Trackers.EntryTracker import EntryTracker
 from Trackers.ExitTracker import ExitTracker
 from Trackers.CarTracker import CarTracker
 from Readers.LicensePlateReader import LicensePlateReader
-from Trackers.SpotTracker import SpotTracker
-from Trackables.Spots import Spots
+
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()

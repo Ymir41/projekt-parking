@@ -5,7 +5,7 @@ from Trackers.CarTracker import CarTracker
 from Trackers.SpotTracker import SpotTracker
 from Trackables.Cars import Cars
 from Trackables.Spots import Spots
-from src.VideoViewer import draw_boxes_from_cars, VideoViewer
+from src.VideoViewer import VideoViewer
 from src.Trackables.Cars import Box
 
 

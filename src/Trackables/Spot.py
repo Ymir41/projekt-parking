@@ -12,8 +12,3 @@ class Spot(Trackable):
         """
         super().__init__(number, box)
 
-    def __str__(self):
-        return f"Spot({self.label}, {self.getBox()})"
-
-    def __repr__(self):
-        return self.__str__()

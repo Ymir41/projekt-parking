@@ -1,5 +1,4 @@
 from src.Trackables.Trackable import Trackable, Box
-from src.restrict_acces import restrict_access
 
 
 class Car(Trackable):
@@ -32,16 +31,3 @@ class Car(Trackable):
         out = self.__class__(self.getPlate(), self.getBox())
         return out
 
-    def __str__(self):
-        return f"Car(\"{self.label}\", {self.getBox()})"
-
-    def __repr__(self):
-        return self.__str__()
-
-    # @restrict_access("Cars")
-    def move(self,  new_box: Box) -> None:
-        """
-        Moves the object around the image.
-        :param new_box: the new box around the trackable
-        """
-        self.setBox(new_box)
