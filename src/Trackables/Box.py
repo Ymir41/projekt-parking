@@ -68,49 +68,6 @@ class Box(object):
         out = cls(x1, y1, x2, y1, x1, y2, x2, y2)
         return out
 
-    @classmethod
-    def almostEqual(cls, box1: Self, box2: Self, tolerance: float) -> bool:
-        """
-        Check if two boxes match within a given tolerance.
-        :param box1: Box
-        :param box2: Box
-        :param tolerance: float - allowed error margin as a fraction of the box size.
-        :return: bool - True if the boxes match within the tolerance, False otherwise.
-        """
-        sy = [0, 0]
-        sy[0] = box1.p[0][1] - box1.p[2][1]
-        sy[1] = box1.p[1][1] - box1.p[3][1]
-
-        sx = [0, 0]
-        sx[0] = box1.p[0][0] - box1.p[1][0]
-        sx[1] = box1.p[2][0] - box1.p[3][0]
-
-        for i, (p1, p2) in enumerate(zip(box1.p, box2.p)):
-            sy_ = sy[i % 2]
-            sx_ = sx[int(i > 2)]
-            error_margin_x = abs(sx_ * tolerance)
-            error_margin_y = abs(sy_ * tolerance)
-            if not ((p1[0] - error_margin_x <= p2[0] <= p1[0] + error_margin_x) and (
-                    p1[1] - error_margin_y <= p2[1] <= p1[1] + error_margin_y)):
-                return False
-        return True
-
-    def __eq__(self, other):
-        return self.p == other.p
-
-    def __str__(self):
-        return f"Box({', '.join(map(lambda p: str(p).replace('(', '').replace(')', ''), self.p))})"
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __copy__(self):
-        out = Box(*self.p)
-        return out
-
-    def __hash__(self):
-        return hash((self.p[0], self.p[1], self.p[2], self.p[3]))
-
     def middle(self) -> tuple[float, float]:
         """
         returns middle point of the box
@@ -121,14 +78,6 @@ class Box(object):
         y = sum(val[1]) // 4
         return x, y
 
-    def distance(self, other):
-        location_self = self.middle()
-        location_other = other.middle()
-        return distance_(location_self, location_other)
-
-    def withinRange(self, other) -> bool:
-        range_ = max(distance_(self.p[0], self.p[3]), distance_(self.p[1], self.p[2])) * 1.2
-        return self.distance(other) < range_
 
     def inside(self, point: tuple[int, int]) -> bool:
         """
