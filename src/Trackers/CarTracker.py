@@ -1,13 +1,10 @@
 import os
-from typing import List
 
-import cv2
 import numpy as np
 from dotenv import load_dotenv
 from inference_sdk import InferenceHTTPClient
 
-from src.Trackables.Box import Box
-from src.Trackables.Cars import Cars, Car, Box
+from src.Trackables.Cars import Cars, Box
 from src.Trackers.Tracker import Tracker
 
 load_dotenv()

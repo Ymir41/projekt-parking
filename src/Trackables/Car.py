@@ -17,17 +17,3 @@ class Car(Trackable):
         super().__init__(plate, box)
         self.id = Car._id_counter
         Car._id_counter += 1
-
-    def getPlate(self):
-        """Accessor method for the car's plate number."""
-        return self.getLabel()
-
-    def setPlate(self, plate: str):
-        """Sets the plate number only if it hasn't been set before."""
-        if self.getLabel() is None:
-            self.setLabel(plate)
-
-    def copy_(self):
-        out = self.__class__(self.getPlate(), self.getBox())
-        return out
-

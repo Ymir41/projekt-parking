@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 class VideoViewer(object):
     """
     A class used to display video.
